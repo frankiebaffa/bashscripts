@@ -43,12 +43,16 @@ function ctrl_c() {
 
 while true; do
 	if [[ $RUNNING == 0 ]]; then
+		echo "Running $RUNNER";
 		$RUNNER & RUNNING=$!
 	elif [[ $RUNNING != 0 ]] && [[ -f "$RUNDIR/$FILEONLY" ]]; then
+		echo "Killing $RUNNING";
 		kill $RUNNING;
+		echo "Removing $RUNNER";
 		rm $RUNNER;
-		sleep 1;
+		echo "Deploying $RUNDIR/$FILEONLY to $RUNNER";
 		mv $RUNDIR/$FILEONLY $RUNNER;
+		echo "Running $RUNNER";
 		$RUNNER & RUNNING=$!
 	fi
 

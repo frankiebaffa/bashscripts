@@ -1,0 +1,28 @@
+#!/bin/bash
+
+batfull="\uf240";
+batmost="\uf241";
+bathalf="\uf242";
+batless="\uf243";
+batnone="\uf244";
+batchar="\uf376";
+CAP=$(batterycap);
+CAPINT=$(($CAP));
+if [[ $CAPINT > 75 ]]; then
+	batsym=$batfull
+elif [[ $CAPINT > 50 ]]; then
+	batsym=$batmost
+elif [[ $CAPINT > 25 ]]; then
+	batsym=$bathalf
+elif [[ $CAPINT > 6 ]]; then
+	batsym=$batless
+else
+	batsym=$batnone
+fi
+STAT=$(cat /sys/class/power_supply/BAT0/status)
+DC="${STAT:0:1}"
+if [[ $DC == "C" ]]; then
+	batsym=$batchar
+fi
+echo -ne "$batsym $CAP%"
+

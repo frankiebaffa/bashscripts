@@ -1,0 +1,9 @@
+#!/bin/bash
+
+lemonbar -B \#2d2d2d -F \#FFFFFF -U \#FF3000 \
+	-f Input-10 \
+	-f "Font Awesome 5 Pro Solid-10" \
+	-f "Font Awesome 5 Pro Regular-10" \
+	-f "Font Awesome 5 Duotone Solid-10" \
+	-f "Font Awesome 5 Brands Regular-10" \
+	-f "FOnt Awesome 5 Pro Light-10";

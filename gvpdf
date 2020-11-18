@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if [ -z "$1" ] && [ -z "$2" ] && [[ $1 == "name" ]]; then
+	NAME=$2
+else
+	read -p "In/Out Name: " NAME
+fi
+
+twopi -Tpdf $NAME.gv > $NAME.pdf

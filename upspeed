@@ -1,0 +1,8 @@
+#!/bin/bash
+
+HEAD="Upload: "
+RESULT=$(speedtest-cli --no-download --simple | grep "$HEAD" | \
+	sed "s/$HEAD//g" |
+	sed "s/ Mbit\/s//g")
+echo -n "${RESULT}"
+

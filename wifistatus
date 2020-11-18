@@ -1,0 +1,29 @@
+#!/bin/bash
+
+ACTIV=$(nmcli -g name c show --active);
+STREN=$(nmcli -g ssid,signal d wifi list | \
+	grep "${ACTIV}" | \
+	splitlines);
+IFS=';' read -ra ADDR <<< "$STREN"
+FIRST="${ADDR[0]}"
+ACTUAL=$(echo $FIRST | sed "s/$ACTIV://g")
+STRENI=$(($ACTUAL));
+
+wififul="\uf1eb"
+wifimed="\uf6ab"
+wifilow="\uf6aa"
+wifinon="\uf6ac"
+if [[ $STRENI > 66 ]]; then
+	wifisym=$wififul
+elif [[ $STRENI > 33 ]]; then
+	wifisym=$wifimed
+else
+	wifisym=$wifilow
+fi
+
+if [[ $ACTIV != '' ]]; then
+	echo -ne "$wifisym $ACTIV ($ACTUAL%)"
+else
+	echo -ne "$wifinon Disconnected (--%)"
+fi
+

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+DATETIME=$(date "+%a %b %d, %T")
+echo -n "$DATETIME"
+

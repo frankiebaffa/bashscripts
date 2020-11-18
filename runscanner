@@ -1,0 +1,56 @@
+#!/bin/bash
+
+if [ ! -d "$HOME/.runscanner" ]; then
+	mkdir "$HOME/.runscanner"
+fi
+
+RUNDIR="$HOME/.runscanner";
+
+if [ -z "$1" ]; then
+	echo "Include file to monitor."
+	exit 1;
+fi
+
+FILE=$1;
+if [ -f "$FILE" ]; then
+	cp "$FILE" "$RUNDIR/${FILE}.scn"
+fi
+
+FILEONLY=$(basename $FILE);
+RUNFILE="${FILEONLY}.scn"
+RUNNER="$RUNDIR/./$RUNFILE";
+
+RUNNING=0
+
+trap ctrl_c INT
+
+function ctrl_c() {
+	echo "Killing $RUNNING";
+	kill $RUNNING;
+
+	if [ -f "$RUNDIR/$RUNFILE" ]; then
+		echo "Removing $RUNDIR/$RUNFILE";
+		rm "$RUNDIR/$RUNFILE"
+	fi
+
+	if [ -f "$RUNDIR/$FILEONLY" ]; then
+		echo "Removing $RUNDIR/$FILEONLY";
+		rm "$RUNDIR/$FILEONLY"
+	fi
+
+	exit 1;
+}
+
+while true; do
+	if [[ $RUNNING == 0 ]]; then
+		$RUNNER & RUNNING=$!
+	elif [[ $RUNNING != 0 ]] && [[ -f "$RUNDIR/$FILEONLY" ]]; then
+		kill $RUNNING;
+		rm $RUNNER;
+		sleep 1;
+		mv $RUNDIR/$FILEONLY $RUNNER;
+		$RUNNER & RUNNING=$!
+	fi
+
+	sleep 1;
+done

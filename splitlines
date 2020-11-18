@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo -n $(sed ':a;N;$!ba;s/\n/;/g' $1);
+

@@ -1,0 +1,47 @@
+#!/bin/bash
+
+function ArgUp() {
+	if [ -z "$1" ]; then
+		# read input for ssid
+		read -p "SSID? " SSID;
+	else
+		SSID=$1
+	fi
+
+	# get saved connections and ; delim
+	SAVED=$(echo $(nmcli -g name c show | sed ':a;N;$!ba;s/\n/;/g'));
+
+	HAS=0;
+
+	# spliterate saved connections on ;
+	IFS=';';
+	read -ra CONN <<< "$SAVED";
+	for val in "${CONN[@]}"; do
+		# flag ssid as saved
+		if [[ $val == $SSID ]]; then
+			HAS=1
+		fi
+	done
+
+	if [[ $HAS == 1 ]]; then
+		nmcli c up $SSID;
+		exit;
+	fi
+
+	read -p "Password? " PASS;
+
+	nmcli d wifi connect "${SSID}" password "${PASS}";
+}
+
+down=0
+up=0
+list=0
+if [[ $1 == "down" ]]; then
+	nmcli c down $(echo $(nmcli -g name c show --active));
+	exit;
+elif [[ $1 == "up" ]]; then
+	ArgUp $2
+elif [[ $1 == "show" ]]; then
+	nmcli -g in-use,ssid,mode,chan,rate,signal,security d wifi list
+fi
+

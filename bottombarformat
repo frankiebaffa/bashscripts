@@ -1,0 +1,8 @@
+#!/bin/bash
+
+lemonbar -b -B \#FFFFFF -F \#000000 -U \#FF3000 \
+	-f Input-10 \
+	-f "Font Awesome 5 Free Regular-10" \
+	-f "Font Awesome 5 Brands-10" \
+	-f "Font Awesome 5 Free Solid-10" \
+	%{l}%{A:nmtui}Wifi%{A}%{l};

@@ -1,0 +1,80 @@
+#!/bin/bash
+# todaydo
+
+verbose=0;
+open_fin=0;
+add_item=0;
+get_item_value=0;
+items_to_add=();
+
+function check_arg() {
+	arg="$1";
+	if [[ $get_item_value == 1 ]]
+	then
+		get_item_value=0;
+		items_to_add+=("${arg}");
+	else
+		if [[ $arg == "-v" ]]
+		then
+			verbose=1;
+		elif [[ $arg == "-o" ]]
+		then
+			open_fin=1;
+		elif [[ $arg == "-a" ]]
+		then
+			add_item=1;
+			get_item_value=1;
+		else
+			echo "Invalid argument: $arg";
+			exit 1;
+		fi
+	fi
+}
+
+for arg in "$@"
+do
+	check_arg "$arg";
+done
+
+file_dir=$HOME/todos
+
+if [ ! -d $file_dir ]; then
+	verbose_ne_print $verbose "$file_dir directory does not exist, creating...";
+	mkdir $HOME/todos &&
+		verbose_ne_print $verbose "created.\n";
+fi
+
+d=$(yyyymmdd);
+file=$file_dir/$d.md;
+
+file_did_not_exist=0;
+if [ ! -f $file ]; then
+	file_did_not_exist=1;
+	verbose_ne_print $verbose "$file file does not exist, creating...";
+	touch $file &&
+		verbose_ne_print $verbose "created.\n";
+fi
+
+append_text="";
+if [[ $file_did_not_exist == 1 ]]
+then
+	append_text="# $d Todo\n_ _ _\n";
+fi
+
+if [[ $add_item == 1 ]]
+then
+	for item in "${items_to_add[@]}"
+	do
+		append_text+="\n-\t[ ]\t$item";
+	done
+fi
+
+verbose_ne_print $verbose "appending text to file...";
+echo -ne "$append_text" >> $file &&
+	verbose_ne_print $verbose "appended.\n";
+
+if [[ $open_fin == 1 ]]
+then
+	$EDITOR $file;
+fi
+

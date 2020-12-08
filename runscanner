@@ -1,59 +1,68 @@
 #!/bin/bash
 
+# check if running directory exists
 if [ ! -d "$HOME/.runscanner" ]; then
+	# create directory from which to run programs
 	mkdir "$HOME/.runscanner"
 fi
 
-RUNDIR="$HOME/.runscanner";
+# set running directory
+rundir="$HOME/.runscanner";
 
+# argument for run file must be included
 if [ -z "$1" ]; then
 	echo "Include file to monitor."
 	exit 1;
 fi
 
-FILE=$1;
-if [ -f "$FILE" ]; then
-	cp "$FILE" "$RUNDIR/${FILE}.scn"
+# copy run file to running directory with .scn extension
+file=$1;
+if [ -f "$file" ]; then
+	cp "$file" "$rundir/${file}.scn"
 fi
 
-FILEONLY=$(basename $FILE);
-RUNFILE="${FILEONLY}.scn"
-RUNNER="$RUNDIR/./$RUNFILE";
+fileonly=$(basename $file);
+runfile="${fileonly}.scn"
+runner="$rundir/./$runfile";
 
-RUNNING=0
+running=0
 
+# cleanup on ctrl + c
 trap ctrl_c INT
-
 function ctrl_c() {
-	echo "Killing $RUNNING";
-	kill $RUNNING;
+	echo "Killing $running";
+	kill $running;
 
-	if [ -f "$RUNDIR/$RUNFILE" ]; then
-		echo "Removing $RUNDIR/$RUNFILE";
-		rm "$RUNDIR/$RUNFILE"
+	if [ -f "$rundir/$runfile" ]; then
+		echo "Removing $rundir/$runfile";
+		rm "$rundir/$runfile"
 	fi
 
-	if [ -f "$RUNDIR/$FILEONLY" ]; then
-		echo "Removing $RUNDIR/$FILEONLY";
-		rm "$RUNDIR/$FILEONLY"
+	if [ -f "$rundir/$fileonly" ]; then
+		echo "Removing $rundir/$fileonly";
+		rm "$rundir/$fileonly"
 	fi
 
 	exit 1;
 }
 
 while true; do
-	if [[ $RUNNING == 0 ]]; then
-		echo "Running $RUNNER";
-		$RUNNER & RUNNING=$!
-	elif [[ $RUNNING != 0 ]] && [[ -f "$RUNDIR/$FILEONLY" ]]; then
-		echo "Killing $RUNNING";
-		kill $RUNNING;
-		echo "Removing $RUNNER";
-		rm $RUNNER;
-		echo "Deploying $RUNDIR/$FILEONLY to $RUNNER";
-		mv $RUNDIR/$FILEONLY $RUNNER;
-		echo "Running $RUNNER";
-		$RUNNER & RUNNING=$!
+	# run if no pid is assigned
+	if [[ $running == 0 ]]; then
+		echo "Running $runner";
+		$runner & running=$!
+	# once new script file is moved to dir, kill running and re execute
+	# for new run file
+	elif [[ $running != 0 ]] && [[ -f "$rundir/$fileonly" ]]; then
+		echo "Killing $running";
+		kill $running;
+		echo "Removing $runner";
+		rm $runner;
+		echo "Deploying $rundir/$fileonly to $runner";
+		mv $rundir/$fileonly $runner;
+		sleep 1;
+		echo "Running $runner";
+		$runner & running=$!
 	fi
 
 	sleep 1;

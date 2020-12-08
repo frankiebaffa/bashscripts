@@ -1,0 +1,17 @@
+#!/bin/bash
+# dry_append_file
+
+if [ ! -z "$1" ] && [ ! -z "$2" ] && [ ! -z "$3" ]
+then
+	dry=$1
+	file=$2
+	content="$3"
+
+	if [ $dry == 0 ]
+	then
+		echo -ne $content >> $file;
+	fi
+else
+	echo -ne "dry_append_file requires 3 arguments\n";
+fi
+

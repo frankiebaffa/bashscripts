@@ -1,0 +1,13 @@
+#!/bin/bash
+# dry_touch_file
+
+if [ ! -z $1 ] && [ ! -z $2 ]
+then
+	if [ $1 == 0 ]
+	then
+		touch $2;
+	fi
+else
+	echo -ne "dry_touch_file requires 2 arguments\n";
+fi
+

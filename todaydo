@@ -1,80 +1,323 @@
 #!/bin/bash
 # todaydo
 
+prog_name="todaydo";
+# initialize switches for valid arguments
+# arg switches {{{
+# print help info
+show_help=0;
+# print info while running
 verbose=0;
+# open once running is finished
 open_fin=0;
+# add a new item to file
 add_item=0;
+# prompt for items to add
+prompt=0;
+# dry run
+dry=0;
+# dry run with dummy file
+dummy=0;
+# list items
+list=0;
+# cat file
+fcat=0;
+# create today if no exist
+create=0;
+# check off item
+cross=0;
+# }}}
+valid_args_passed=();
+
+function show_help() { # {{{
+	echo -ne "\
+$progname
+This program is used to create and manage to do lists for daily tasks.
+
+Arguments:
+-h | --help           Displays help information. (this message)
+-v | --verbose        Displays information as program runs.
+-o | --open-file      Opens the file in your editor ($EDITOR) when running is \
+complete.
+-a | --append [item]  Adds a new item to the todo list.
+-p | --prompt-append  Prompts user for new items to add to the todo list. \
+(a blank line will end the prompt)
+-d | --dry-run        Runs the program without create any files or directories.
+-y | --dummy          Runs the program as dry and also ignore's the existing \
+file.
+-l | --list           Lists the todo contents of today's file. (runs after \
+append)
+-c | --concatenate    Displays the entire today file using the cat command.
+-f | --create         Creates the daily file when it does not exist.
+-x | --cross [number] Crosses the given number's corresponding item off of the \
+list.
+";
+	exit;
+} # }}}
+
 get_item_value=0;
 items_to_add=();
 
-function check_arg() {
+get_item_num=0;
+items_to_cross=();
+
+function check_arg() { # {{{
 	arg="$1";
 	if [[ $get_item_value == 1 ]]
 	then
 		get_item_value=0;
 		items_to_add+=("${arg}");
+	elif [[ $get_item_num == 1 ]]
+	then
+		get_item_num=0;
+		items_to_cross+=("${arg}");
 	else
-		if [[ $arg == "-v" ]]
+		if [[ $arg == "-v" ]] || [[ $arg == "--verbose" ]]
 		then
 			verbose=1;
-		elif [[ $arg == "-o" ]]
+			valid_args_passed+=("$arg");
+		elif [[ $arg == "-o" ]] || [[ $arg == "--open-file" ]]
 		then
 			open_fin=1;
-		elif [[ $arg == "-a" ]]
+			valid_args_passed+=("$arg");
+		elif [[ $arg == "-a" ]] || [[ $arg == "--append" ]]
 		then
 			add_item=1;
 			get_item_value=1;
+			valid_args_passed+=("$arg");
+		elif [[ $arg == "-p" ]] || [[ $arg == "--prompt-append" ]]
+		then
+			add_item=1;
+			prompt=1;
+			valid_args_passed+=("$arg");
+		elif [[ $arg == "-d" ]] || [[ $arg == "--dry-run" ]]
+		then
+			dry=1;
+			valid_args_passed+=("$arg");
+		elif [[ $arg == "-l" ]] || [[ $arg == "--list" ]]
+		then
+			list=1;
+			valid_args_passed+=("$arg");
+		elif [[ $arg == "-c" ]] || [[ $arg == "--concatentate" ]]
+		then
+			fcat=1;
+			valid_args_passed+=("$arg");
+		elif [[ $arg == "-y" ]] || [[ $arg == "--dummy" ]]
+		then
+			dummy=1;
+			dry=1;
+			valid_args_passed+=("$arg");
+		elif [[ $arg == "-f" ]] || [[ $arg == "--force-create" ]]
+		then
+			create=1;
+			valid_args_passed+=("$arg");
+		elif [[ $arg == "-h" ]] || [[ $arg == "--help" ]]
+		then
+			show_help=1;
+		elif [[ $arg == "-x" ]] || [[ $arg == "--cross" ]]
+		then
+			cross=1;
+			get_item_num=1;
+			valid_args_passed+=("$arg");
 		else
-			echo "Invalid argument: $arg";
-			exit 1;
+			echo -ne "Invalid argument: $arg.\n";
+			echo -ne "USAGE:\n";
+			show_help;
+			exit;
 		fi
 	fi
-}
+} # }}}
 
-for arg in "$@"
+# iterate through args and set switches
+for arg in "$@" # {{{
 do
 	check_arg "$arg";
-done
+done # }}}
 
-file_dir=$HOME/todos
+# if $show_help, then show help
+if [[ $show_help == 1 ]] # {{{
+then
+	show_help
+	exit;
+fi # }}}
 
-if [ ! -d $file_dir ]; then
+# if $verbose, print prog name and flipped switches
+if [[ $verbose == 1 ]] # {{{
+then
+	echo -ne "\
+$prog_name
+args: [${valid_args_passed[@]}]
+";
+fi # }}}
+
+file_dir=$HOME/todos;
+
+# check if file dir exists
+# if not, check $create
+# if $create, create dir
+# if not $create, exit
+if [ ! -d $file_dir ] && [[ $create == 1 ]] && [[ $dummy == 0 ]] # {{{
+then
 	verbose_ne_print $verbose "$file_dir directory does not exist, creating...";
-	mkdir $HOME/todos &&
-		verbose_ne_print $verbose "created.\n";
-fi
+	if [[ $dry == 0 ]]
+	then
+		mkdir $HOME/todos &&
+			verbose_ne_print $verbose "created.\n";
+	else
+		verbose_ne_print $verbose "dry run, not created.\n";
+	fi
+elif [ ! -d $file_dir ] && [[ $create == 0 ]] && [[ $dummy == 0 ]]
+then
+	echo -ne "The directory $HOME/todos does not exist.\n";
+	echo -ne "To force creation. include -f switch.\n";
+	exit;
+elif [[ $dummy == 1 ]]
+then
+	verbose_ne_print $verbose "dummy run, ignoring directory check.\n";
+fi # }}}
 
 d=$(yyyymmdd);
 file=$file_dir/$d.md;
-
 file_did_not_exist=0;
-if [ ! -f $file ]; then
+
+# check if today's file exists
+# if not, check $create
+# if $create, create file
+# if not $create, exit
+if [ ! -f $file ] && [[ $create == 1 ]] && [[ $dummy == 0 ]] # {{{
+then
 	file_did_not_exist=1;
 	verbose_ne_print $verbose "$file file does not exist, creating...";
-	touch $file &&
+	dry_touch_file $dry $file &&
 		verbose_ne_print $verbose "created.\n";
-fi
+elif [ ! -f $file ] && [[ $create == 0 ]] && [[ $dummy == 0 ]]
+then
+	echo -ne "Today's file does not exist.\n";
+	echo -ne "To force creation. include -f switch.\n";
+	exit;
+elif [[ $dummy == 1 ]]
+then
+	verbose_ne_print $verbose "dummy run, ignoring file check.\n";
+	file_did_not_exist=1;
+fi # }}}
+
+# if $prompt, append prompted items to $items_to_add until blank is passed
+if [[ $prompt == 1 ]] # {{{
+then
+	p="x";
+	i=1;
+	while [[ ! -z $p ]]
+	do
+		if [[ $((i)) -gt 1 ]]
+		then
+			items_to_add+=("$p");
+		fi
+		read -p "$i: " p;
+		i=$(($i + 1));
+	done
+fi # }}}
 
 append_text="";
-if [[ $file_did_not_exist == 1 ]]
-then
-	append_text="# $d Todo\n_ _ _\n";
-fi
 
-if [[ $add_item == 1 ]]
+# if file was just created, append header to text
+if [[ $file_did_not_exist == 1 ]] # {{{
 then
+	append_text+="# $d Todo\n_ _ _\n";
+fi # }}}
+
+# if $add_item, append items as list to text
+if [[ $add_item == 1 ]] # {{{
+then
+	i=0;
 	for item in "${items_to_add[@]}"
 	do
-		append_text+="\n-\t[ ]\t$item";
+		i=$((i + 1));
+		append_text+="\n$i.\t[ ]\t$item";
+	done
+fi # }}}
+
+# check $append_text
+# if not blank, append to file
+if [[ ! -z $append_text ]] && [[ $dry == 0 ]] # {{{
+then
+	verbose_ne_print $verbose "appending text to file...";
+	dry_append_file $dry $file "$append_text" &&
+		verbose_ne_print $verbose "appended.\n";
+fi # }}}
+
+# cross off item function
+function cross_off() { # {{{
+	echo -ne "$2" | sed "s/(^$1\+\.\s\+)?<=\[ \]//g";
+} # }}}
+
+# cross off items
+if [[ $cross == 1 ]] && [[ $dummy == 0 ]] && [[ $dry == 0 ]]
+then
+	for num in "${items_to_cross[@]}"
+	do
+		file_contents="$(cat $file)";
+		cross_off "$num" "$file_contents";
 	done
 fi
 
-verbose_ne_print $verbose "appending text to file...";
-echo -ne "$append_text" >> $file &&
-	verbose_ne_print $verbose "appended.\n";
+# if $fcat, not $dummy, not $dry, cat $file
+# if $fcat, $dummy or $dry, print $append_text
+if [[ $fcat == 1 ]] && [[ $dummy == 0 ]] && [[ $dry == 0 ]] # {{{
+then
+	verbose_ne_print $verbose "FILE CONTENTS:\n\n";
+	cat $file;
+elif [[ $fcat == 1 ]]
+then
+	if [[ $dummy == 1 ]] || [[ $dry == 1 ]]
+	then
+		if [[ $dummy == 1 ]]
+		then
+			verbose_ne_print $verbose "DUMMY CONTENTS:\n\n";
+		else
+			verbose_ne_print $verbose "DRY CONTENTS:\n\n";
+		fi
+		echo -ne $append_text;
+		echo -ne "\n";
+	fi
+fi # }}}
 
-if [[ $open_fin == 1 ]]
+# get items from file using grep and sed
+function echo_items() { # {{{
+	echo -ne "$1" | grep "^[0-9]\+\.\s\+" | sed "s/^[0-9]\+\.\s\+//g";
+} # }}}
+
+# if $list, not $dummy, not $dry, list items in file
+# if $list, $dummy, list items in args
+# if $list, $dry, list items in file and args
+if [[ $list == 1 ]] && [[ $dummy == 0 ]] && [[ $dry == 0 ]] # {{{
+then
+	verbose_ne_print $verbose "ITEMS:\n\n"
+	file_contents="$(cat $file)";
+	echo_items "$file_contents"
+elif [[ $list == 1 ]]
+then
+	if [[ $dummy == 1 ]]
+	then
+		verbose_ne_print $verbose "ITEMS:\n\n"
+		echo_items "$append_text";
+	elif [[ $dry == 1 ]]
+	then
+		verbose_ne_print $verbose "ITEMS:\n\n"
+		file_contents="$(cat $file)";
+		file_contents+="$append_text";
+		echo_items "$file_contents";
+	fi
+fi # }}}
+
+# if $open_fin and not $dry, open file
+if [[ $open_fin == 1 ]] && [[ $dry == 0 ]] # {{{
 then
 	$EDITOR $file;
-fi
+elif [[ $open_fin == 1 ]] && [[ $dry == 1 ]]
+then
+	echo -ne "Cannot open file after a dry run.\n";
+fi # }}}
 
+# VIm Folding {{{
+# vim:fdm=marker
+# }}}

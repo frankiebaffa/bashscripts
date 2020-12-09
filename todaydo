@@ -26,31 +26,40 @@ fcat=0;
 create=0;
 # check off item
 cross=0;
+# uncheck item
+uncross=0;
+# add subitem
+add_sub_item=0;
 # }}}
+
 valid_args_passed=();
 
 function show_help() { # {{{
 	echo -ne "\
-$progname
+$prog_name
 This program is used to create and manage to do lists for daily tasks.
 
 Arguments:
--h | --help           Displays help information. (this message)
--v | --verbose        Displays information as program runs.
--o | --open-file      Opens the file in your editor ($EDITOR) when running is \
-complete.
--a | --append [item]  Adds a new item to the todo list.
--p | --prompt-append  Prompts user for new items to add to the todo list. \
-(a blank line will end the prompt)
--d | --dry-run        Runs the program without create any files or directories.
--y | --dummy          Runs the program as dry and also ignore's the existing \
-file.
--l | --list           Lists the todo contents of today's file. (runs after \
-append)
--c | --concatenate    Displays the entire today file using the cat command.
--f | --create         Creates the daily file when it does not exist.
--x | --cross [number] Crosses the given number's corresponding item off of the \
-list.
+-h | --help                     Displays help information. (this message)
+-v | --verbose                  Displays information as program runs.
+-o | --open-file                Opens the file in your editor ($EDITOR) when \
+running is complete.
+-a | --append [item]            Adds a new item to the todo list.
+-p | --prompt                   Uses prompt interface. (Command: todaydoprompt)
+-d | --dry-run                  Runs the program without create any files or \
+directories.
+-y | --dummy                    Runs the program as dry and also ignore's the \
+existing file.
+-l | --list                     Lists the todo contents of today's file. \
+(runs after append)
+-c | --concatenate              Displays the entire today file using the cat command.
+-f | --create                   Creates the daily file when it does not exist.
+-x | --cross [number]           Crosses the given number's corresponding item \
+off of the list.
+-u | --uncross [number]         Uncrosses the given number's corresponding \
+item from the list.
+-s | --subitem [number] [item]  Adds a subitem to the given number's \
+corresponding item.
 ";
 	exit;
 } # }}}
@@ -58,9 +67,19 @@ list.
 get_item_value=0;
 items_to_add=();
 
+get_sub_item_num=0;
+get_sub_item_value=0;
+sub_items_to_add=();
+sub_items_add_to=();
+
 get_item_num=0;
 items_to_cross=();
 
+get_uncross_num=0;
+items_to_uncross=();
+
+# checks arguments to make sure they are valid and adjusts the corresponding
+# switch
 function check_arg() { # {{{
 	arg="$1";
 	if [[ $get_item_value == 1 ]]
@@ -71,6 +90,19 @@ function check_arg() { # {{{
 	then
 		get_item_num=0;
 		items_to_cross+=("${arg}");
+	elif [[ $get_uncross_num == 1 ]]
+	then
+		get_uncross_num=0;
+		items_to_uncross+=("${arg}");
+	elif [[ $get_sub_item_num == 1 ]]
+	then
+		get_sub_item_num=0;
+		sub_items_add_to+=("${arg}");
+		get_sub_item_value=1;
+	elif [[ $get_sub_item_value == 1 ]]
+	then
+		get_sub_item_value=0;
+		sub_items_to_add+=("${arg}");
 	else
 		if [[ $arg == "-v" ]] || [[ $arg == "--verbose" ]]
 		then
@@ -85,10 +117,14 @@ function check_arg() { # {{{
 			add_item=1;
 			get_item_value=1;
 			valid_args_passed+=("$arg");
-		elif [[ $arg == "-p" ]] || [[ $arg == "--prompt-append" ]]
+		elif [[ $arg == "-p" ]] || [[ $arg == "--prompt" ]]
 		then
-			add_item=1;
 			prompt=1;
+			valid_args_passed+=("$arg");
+		elif [[ $arg == "-s" ]] || [[ $arg == "--subitem" ]]
+		then
+			add_sub_item=1;
+			get_sub_item_num=1;
 			valid_args_passed+=("$arg");
 		elif [[ $arg == "-d" ]] || [[ $arg == "--dry-run" ]]
 		then
@@ -119,6 +155,11 @@ function check_arg() { # {{{
 			cross=1;
 			get_item_num=1;
 			valid_args_passed+=("$arg");
+		elif [[ $arg == "-u" ]] || [[ $arg == "--uncross" ]]
+		then
+			uncross=1;
+			get_uncross_num=1;
+			valid_args_passed+=("$arg");
 		else
 			echo -ne "Invalid argument: $arg.\n";
 			echo -ne "USAGE:\n";
@@ -138,6 +179,13 @@ done # }}}
 if [[ $show_help == 1 ]] # {{{
 then
 	show_help
+	exit;
+fi # }}}
+
+# if $prompt, then run todaydoprompt
+if [[ $prompt == 1 ]] # {{{
+then
+	todaydoprompt;
 	exit;
 fi # }}}
 
@@ -201,22 +249,6 @@ then
 	file_did_not_exist=1;
 fi # }}}
 
-# if $prompt, append prompted items to $items_to_add until blank is passed
-if [[ $prompt == 1 ]] # {{{
-then
-	p="x";
-	i=1;
-	while [[ ! -z $p ]]
-	do
-		if [[ $((i)) -gt 1 ]]
-		then
-			items_to_add+=("$p");
-		fi
-		read -p "$i: " p;
-		i=$(($i + 1));
-	done
-fi # }}}
-
 append_text="";
 
 # if file was just created, append header to text
@@ -245,9 +277,16 @@ then
 		verbose_ne_print $verbose "appended.\n";
 fi # }}}
 
+# if $dry and not $dummy, append $append_text to $(cat $file)
+if [[ $dry == 1 ]] && [[ $dummy == 0 ]] # {{{
+then
+	file_text="$(cat $file)";
+	append_text="$file_text"+"$append_text";
+fi # }}}
+
 # cross off item function
 function cross_off() { # {{{
-	echo -ne "$2" | sed "s/\($1\)?<=\.//g";
+	echo -ne "$2" | perl -ne "s/(?<=^$1\.\s)\[\s\]/\[x\]/g; print;"
 } # }}}
 
 # cross off items
@@ -256,15 +295,63 @@ then
 	for num in "${items_to_cross[@]}"
 	do
 		file_contents="$(cat $file)";
-		cross_off "$num" "$file_contents";
+		file_contents=$(cross_off "$num" "$file_contents");
+		echo -ne "$file_contents" > $file
 	done
 elif [[ $cross == 1 ]]
 then
 	for num in "${items_to_cross[@]}"
 	do
-		cross_off "$num" "$append_text";
+		file_contents=$(cross_off "$num" "$append_text");
+		append_text="$file_contents"
 	done
 fi # }}}
+
+# uncross item function
+function uncross_off() { # {{{
+	echo -ne "$2" | perl -ne "s/(?<=^$1\.\s)\[x\]/\[ \]/g; print;"
+} # }}}
+
+# uncross items
+if [[ $uncross == 1 ]] && [[ $dummy == 0 ]] && [[ $dry == 0 ]] # {{{
+then
+	for num in "${items_to_uncross[@]}"
+	do
+		file_contents="$(cat $file)";
+		file_contents=$(uncross_off "$num" "$file_contents");
+		echo -ne "$file_contents" > $file
+	done
+elif [[ $uncross == 1 ]]
+then
+	for num in "${items_to_uncross[@]}"
+	do
+		file_contents=$(uncross_off "$num" "$append_text");
+		append_text="$file_contents"
+	done
+fi # }}}
+
+# sub items function
+function sub_item() {
+	line=$(echo -ne "$3" | grep "^$1\.\s")
+	echo "$line";
+}
+
+# add sub items
+if [[ $add_sub_item == 1 ]] && [[ $dry == 0 ]] && [[ $dummy == 0 ]]
+then
+	i=0;
+	while [[ i -lt ${#sub_items_to_add[@]} ]]
+	do
+		num=${sub_items_add_to[i]};
+		item=${sub_items_to_add[i]};
+		file_contents="$(cat $file)";
+		sub_item "$num" "$item" "$file_contents";
+		i=$((i + 1));
+	done
+elif [[ $add_sub_item == 1 ]]
+then
+	echo "nothing yet"
+fi
 
 # if $fcat, not $dummy, not $dry, cat $file
 # if $fcat, $dummy or $dry, print $append_text
@@ -282,14 +369,14 @@ then
 		else
 			verbose_ne_print $verbose "DRY CONTENTS:\n\n";
 		fi
-		echo -ne $append_text;
+		echo -ne "$append_text";
 		echo -ne "\n";
 	fi
 fi # }}}
 
 # get items from file using grep and sed
 function echo_items() { # {{{
-	echo -ne "$1" | grep "^[0-9]\+\.\s\+" | sed "s/^[0-9]\+\.\s\+//g";
+	echo -ne "$1" | grep "^[0-9]\+\.\s\+";
 } # }}}
 
 # if $list, not $dummy, not $dry, list items in file
@@ -302,17 +389,8 @@ then
 	echo_items "$file_contents"
 elif [[ $list == 1 ]]
 then
-	if [[ $dummy == 1 ]]
-	then
-		verbose_ne_print $verbose "ITEMS:\n\n"
-		echo_items "$append_text";
-	elif [[ $dry == 1 ]]
-	then
-		verbose_ne_print $verbose "ITEMS:\n\n"
-		file_contents="$(cat $file)";
-		file_contents+="$append_text";
-		echo_items "$file_contents";
-	fi
+	verbose_ne_print $verbose "ITEMS:\n\n"
+	echo_items "$append_text";
 fi # }}}
 
 # if $open_fin and not $dry, open file

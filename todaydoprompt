@@ -1,0 +1,185 @@
+#!/bin/bash
+# todaydoprompt
+
+prog_name="todaydoprompt";
+
+verbose=0;
+v_switch="";
+v_line="Off";
+
+dry=0;
+d_switch="";
+d_line="Off";
+
+dummy=0;
+y_switch="";
+y_line="Off";
+
+function add_loop() {
+	item="x";
+	i=0;
+	add_to_items=();
+	while [[ ! -z "$item" ]]
+	do
+		i=$((i + 1));
+		read -p "$i. " item;
+		if [[ ! -z "$item" ]]
+		then
+			add_to_items+=("$item");
+		fi
+	done
+	add_script="todaydo$vswitch$d_switch$y_switch";
+	for item in "${add_to_items[@]}"
+	do
+		add_script+=" -a \"$item\"";
+	done
+	verbose_ne_print $verbose "Running: $add_script...\n";
+	eval $add_script;
+}
+
+function generate() {
+	gen_script="todaydo$vswitch$d_switch$y_switch -f";
+	verbose_ne_print $verbose "Running: $gen_script...\n";
+	eval $gen_script;
+}
+
+function cross_loop() {
+	item="x";
+	cross_items=();
+	while [[ ! -z "$item" ]]
+	do
+		read -p "Number to cross: " item;
+		if [[ ! -z "$item" ]]
+		then
+			item=$((item + 0));
+			cross_items+=("$item");
+		fi
+	done
+	cross_script="todaydo$vswitch$d_switch$y_switch";
+	for num in "${cross_items[@]}"
+	do
+		cross_script+=" -x $num";
+	done
+	verbose_ne_print $verbose "Running: $cross_script...\n";
+	eval $cross_script;
+}
+
+function uncross_loop() {
+	item="x";
+	uncross_items=();
+	while [[ ! -z "$item" ]]
+	do
+		read -p "Number to uncross: " item;
+		if [[ ! -z "$item" ]]
+		then
+			item=$((item + 0));
+			uncross_items+=("$item");
+		fi
+	done
+	uncross_script="todaydo$vswitch$d_switch$y_switch";
+	for num in "${uncross_items[@]}"
+	do
+		uncross_script+=" -u $num";
+	done
+	verbose_ne_print $verbose "Running: $uncross_script...\n";
+	eval $uncross_script;
+}
+
+function list_items() {
+	list_script="todaydo$vswitch$d_switch$y_switch -l";
+	verbose_ne_print $verbose "Running: $list_script...\n";
+	eval $list_script;
+}
+
+function cat_file() {
+	cat_script="todaydo$vswitch$d_switch$y_switch -c";
+	verbose_ne_print $verbose "Running: $cat_script...\n";
+	eval $cat_script;
+}
+
+function parse_selection() {
+	select="$1";
+	if [[ $select == "a" ]]
+	then
+		add_loop;
+	elif [[ $select == "f" ]]
+	then
+		generate;
+	elif [[ $select == "x" ]]
+	then
+		cross_loop;
+	elif [[ $select == "u" ]]
+	then
+		uncross_loop;
+	elif [[ $select == "l" ]]
+	then
+		list_items;
+	elif [[ $select == "c" ]]
+	then
+		cat_file;
+	elif [[ $select == "v" ]]
+	then
+		if [[ $verbose == 0 ]]
+		then
+			verbose=1;
+			v_switch=" -v";
+			v_line="On"
+		elif [[ $verbose == 1 ]]
+		then
+			verbose=0;
+			v_switch="";
+			v_line="Off"
+		fi
+	elif [[ $select == "d" ]]
+	then
+		if [[ $dry == 0 ]]
+		then
+			dry=1;
+			d_switch=" -d";
+			d_line="On"
+		elif [[ $dry == 1 ]]
+		then
+			dry=0;
+			d_switch="";
+			d_line="Off"
+		fi
+	elif [[ $select == "y" ]]
+	then
+		if [[ $dummy == 0 ]]
+		then
+			dummy=1;
+			y_switch=" -y";
+			y_line="On"
+		elif [[ $dummy == 1 ]]
+		then
+			dummy=0;
+			y_switch="";
+			y_line="Off"
+		fi
+	elif [[ $select == "e" ]]
+	then
+		exit;
+	fi
+}
+
+run=1;
+while [[ $run == 1 ]]
+do
+	read -p "\
+Switches: [Verbose: $v_line, Dry: $d_line, Dummy: $y_line]
+What would you like to do?
+(f) Generate today's list
+(a) Add items
+(x) Cross off items
+(u) Uncross items
+(l) List items
+(c) Cat file
+(v) Toggle verbose mode
+(d) Toggle dry mode
+(y) Toggle dummy mode
+(e) Exit
+: " select;
+	echo -ne "\n";
+	parse_selection "$select";
+	echo -ne "\n";
+done

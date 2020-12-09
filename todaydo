@@ -247,18 +247,24 @@ fi # }}}
 
 # cross off item function
 function cross_off() { # {{{
-	echo -ne "$2" | sed "s/(^$1\+\.\s\+)?<=\[ \]//g";
+	echo -ne "$2" | sed "s/\($1\)?<=\.//g";
 } # }}}
 
 # cross off items
-if [[ $cross == 1 ]] && [[ $dummy == 0 ]] && [[ $dry == 0 ]]
+if [[ $cross == 1 ]] && [[ $dummy == 0 ]] && [[ $dry == 0 ]] # {{{
 then
 	for num in "${items_to_cross[@]}"
 	do
 		file_contents="$(cat $file)";
 		cross_off "$num" "$file_contents";
 	done
-fi
+elif [[ $cross == 1 ]]
+then
+	for num in "${items_to_cross[@]}"
+	do
+		cross_off "$num" "$append_text";
+	done
+fi # }}}
 
 # if $fcat, not $dummy, not $dry, cat $file
 # if $fcat, $dummy or $dry, print $append_text

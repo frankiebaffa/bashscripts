@@ -1,0 +1,13 @@
+{"tasks": [
+	{
+		"label": "todaydo",
+		"type": "directory",
+		"items": [
+			{
+				"label": "cross",
+				"type": "bash",
+				"action": "todaydo -y -a 'first' -a 'second' -a 'third' -x 3"
+			}
+		]
+	}
+]}

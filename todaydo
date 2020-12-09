@@ -240,6 +240,9 @@ d=$(yyyy_mm_dd);
 file=$file_dir/$d.md;
 file_did_not_exist=0;
 
+file_did_not_exist=0;
+text_to_write="";
+
 # check if today's file exists
 # if not, check $create
 # if $create, create file
@@ -257,16 +260,16 @@ then
 	exit;
 elif [[ $dummy == 1 ]]
 then
-	verbose_ne_print $verbose "dummy run, ignoring file check.\n";
 	file_did_not_exist=1;
+	verbose_ne_print $verbose "dummy run, ignoring file check.\n";
 fi # }}}
-
-append_text="";
 
 # if file was just created, append header to text
 if [[ $file_did_not_exist == 1 ]] # {{{
 then
-	append_text+="# $d Todo\n_ _ _\n";
+	text_to_write+="# $d Todo\n_ _ _\n";
+else
+	text_to_write+="$(cat $file)";
 fi # }}}
 
 # if $add_item, append items as list to text
@@ -278,16 +281,8 @@ then
 	for item in "${items_to_add[@]}"
 	do
 		i=$((i + 1));
-		append_text+="\n$i.\t[ ]\t$item";
+		text_to_write+="\n$i.\t[ ]\t$item";
 	done
-fi # }}}
-
-# if $dry and not $dummy, append $append_text to $(cat $file)
-if [[ $file_did_not_exist == 0 ]] && [[ $dummy == 0 ]] # {{{
-then
-	file_text="$(cat $file)";
-	file_text+="$append_text";
-	append_text="$file_text";
 fi # }}}
 
 # cross off item function
@@ -296,20 +291,11 @@ function cross_off() { # {{{
 } # }}}
 
 # cross off items
-if [[ $cross == 1 ]] && [[ $dummy == 0 ]] && [[ $dry == 0 ]] # {{{
+if [[ $cross == 1 ]] # {{{
 then
 	for num in "${items_to_cross[@]}"
 	do
-		file_contents="$(cat $file)";
-		file_contents=$(cross_off "$num" "$file_contents");
-		echo -ne "$file_contents" > $file
-	done
-elif [[ $cross == 1 ]]
-then
-	for num in "${items_to_cross[@]}"
-	do
-		file_contents=$(cross_off "$num" "$append_text");
-		append_text="$file_contents"
+		text_to_write=$(cross_off "$num" "$text_to_write");
 	done
 fi # }}}
 
@@ -319,20 +305,11 @@ function uncross_off() { # {{{
 } # }}}
 
 # uncross items
-if [[ $uncross == 1 ]] && [[ $dummy == 0 ]] && [[ $dry == 0 ]] # {{{
+if [[ $uncross == 1 ]] # {{{
 then
 	for num in "${items_to_uncross[@]}"
 	do
-		file_contents="$(cat $file)";
-		file_contents=$(uncross_off "$num" "$file_contents");
-		echo -ne "$file_contents" > $file
-	done
-elif [[ $uncross == 1 ]]
-then
-	for num in "${items_to_uncross[@]}"
-	do
-		file_contents=$(uncross_off "$num" "$append_text");
-		append_text="$file_contents"
+		text_to_write=$(uncross_off "$num" "$text_to_write");
 	done
 fi # }}}
 
@@ -359,17 +336,17 @@ then
 	echo "nothing yet"
 fi # }}}
 
-# check $append_text
+# check $text_to_write
 # if not blank, append to file
-if [[ ! -z $append_text ]] && [[ $write_to_file == 1 ]] # {{{
+if [[ ! -z $text_to_write ]] && [[ $write_to_file == 1 ]] # {{{
 then
 	verbose_ne_print $verbose "appending text to file...";
-	dry_append_file $dry $file "$append_text" &&
+	dry_append_file $dry $file "$text_to_write" &&
 		verbose_ne_print $verbose "appended.\n";
 fi # }}}
 
 # if $fcat, not $dummy, not $dry, cat $file
-# if $fcat, $dummy or $dry, print $append_text
+# if $fcat, $dummy or $dry, print $text_to_write
 if [[ $fcat == 1 ]] && [[ $dummy == 0 ]] && [[ $dry == 0 ]] # {{{
 then
 	verbose_ne_print $verbose "FILE CONTENTS:\n\n";
@@ -384,7 +361,7 @@ then
 		else
 			verbose_ne_print $verbose "DRY CONTENTS:\n\n";
 		fi
-		echo -ne "$append_text";
+		echo -ne "$text_to_write";
 		echo -ne "\n";
 	fi
 fi # }}}
@@ -405,7 +382,7 @@ then
 elif [[ $list == 1 ]]
 then
 	verbose_ne_print $verbose "ITEMS:\n\n"
-	echo_items "$append_text";
+	echo_items "$text_to_write";
 fi # }}}
 
 # if $open_fin and not $dry, open file

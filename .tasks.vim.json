@@ -6,7 +6,22 @@
 			{
 				"label": "cross",
 				"type": "bash",
-				"action": "todaydo -y -a 'first' -a 'second' -a 'third' -x 3"
+				"action": "todaydo -y -a 'first' -a 'second' -a 'third' -x 3 -c"
+			},
+			{
+				"label": "uncross",
+				"type": "bash",
+				"action": "todaydo -y -a 'first' -a 'second' -a 'third' -x 3 -u 3 -c"
+			},
+			{
+				"label": "list",
+				"type": "bash",
+				"action": "todaydo -y -a 'first' -a 'second' -a 'third' -l"
+			},
+			{
+				"label": "cat",
+				"type": "bash",
+				"action": "todaydo -y -a 'first' -a 'second' -a 'third' -c"
 			}
 		]
 	}

@@ -1,0 +1,15 @@
+#!/bin/bash
+# replace_list_item
+
+num=$1;
+item=$2;
+list=$3;
+
+#testnum=2;
+#testlist="\
+#1.	[ ]	This is the first
+#2.	[ ]	This is the second
+#3.	[ ]	This is the third";
+#testitem="A different description";
+
+echo -ne "$list" | perl -ne "s/(?<=^$num\.\s\[.\]\s).*$/$item/g; print;"

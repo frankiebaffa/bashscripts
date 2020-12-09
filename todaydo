@@ -2,6 +2,7 @@
 # todaydo
 
 prog_name="todaydo";
+
 # initialize switches for valid arguments
 # arg switches {{{
 # print help info
@@ -28,6 +29,8 @@ create=0;
 cross=0;
 # uncheck item
 uncross=0;
+# edit item
+edit=0;
 # add subitem
 add_sub_item=0;
 # }}}
@@ -60,25 +63,38 @@ existing file.
 off of the list.
 -u | --uncross [number]         Uncrosses the given number's corresponding \
 item from the list.
+-e | --edit [number] [descript] Allows user to redefine the description for \
+the given number's corresponding item.
 -s | --subitem [number] [item]  Adds a subitem to the given number's \
 corresponding item.
 ";
 	exit;
 } # }}}
 
+# add item variables {{{
 get_item_value=0;
 items_to_add=();
-
+# }}}
+# sub item init variables {{{
 get_sub_item_num=0;
 get_sub_item_value=0;
 sub_items_to_add=();
 sub_items_add_to=();
-
-get_item_num=0;
+# }}}
+# cross item variables {{{
+get_cross_num=0;
 items_to_cross=();
-
+# }}}
+# uncross item variables {{{
 get_uncross_num=0;
 items_to_uncross=();
+# }}}
+# edit item variables {{{
+get_edit_num=0;
+get_edit_val=0;
+items_to_edit=();
+items_edit_to=();
+# }}}
 
 # checks arguments to make sure they are valid and adjusts the corresponding
 # switch
@@ -88,9 +104,9 @@ function check_arg() { # {{{
 	then
 		get_item_value=0;
 		items_to_add+=("${arg}");
-	elif [[ $get_item_num == 1 ]]
+	elif [[ $get_cross_num == 1 ]]
 	then
-		get_item_num=0;
+		get_cross_num=0;
 		items_to_cross+=("${arg}");
 	elif [[ $get_uncross_num == 1 ]]
 	then
@@ -105,6 +121,15 @@ function check_arg() { # {{{
 	then
 		get_sub_item_value=0;
 		sub_items_to_add+=("${arg}");
+	elif [[ $get_edit_num == 1 ]]
+	then
+		get_edit_num=0;
+		get_edit_val=1;
+		items_to_edit+=("${arg}");
+	elif [[ $get_edit_val == 1 ]]
+	then
+		get_edit_val=0;
+		items_edit_to+=("${arg}");
 	else
 		if [[ $arg == "-v" ]] || [[ $arg == "--verbose" ]]
 		then
@@ -158,13 +183,19 @@ function check_arg() { # {{{
 		then
 			cross=1;
 			write_to_file=1;
-			get_item_num=1;
+			get_cross_num=1;
 			valid_args_passed+=("$arg");
 		elif [[ $arg == "-u" ]] || [[ $arg == "--uncross" ]]
 		then
 			uncross=1;
 			write_to_file=1;
 			get_uncross_num=1;
+			valid_args_passed+=("$arg");
+		elif [[ $arg == "-e" ]] || [[ $arg == "--edit" ]]
+		then
+			edit=1;
+			write_to_file=1;
+			get_edit_num=1;
 			valid_args_passed+=("$arg");
 		else
 			echo -ne "Invalid argument: $arg.\n";
@@ -336,7 +367,21 @@ then
 	echo "nothing yet"
 fi # }}}
 
-# check $text_to_write
+# edit entries
+if [[ $edit == 1 ]] # {{{
+then
+	i=0;
+	while [[ $i -lt ${#items_to_edit[@]} ]]
+	do
+		num=${items_to_edit[i]};
+		item=${items_edit_to[i]};
+		text_to_write=$(replace_list_item "$num" "$item" "$text_to_write");
+		text_to_write="$text_to_write";
+		i=$((i + 1));
+	done
+fi # }}}
+
+# check $text_to_write and $write_to_file
 # if not blank, append to file
 if [[ ! -z $text_to_write ]] && [[ $write_to_file == 1 ]] # {{{
 then
@@ -397,3 +442,4 @@ fi # }}}
 # VIm Folding {{{
 # vim:fdm=marker
 # }}}
+

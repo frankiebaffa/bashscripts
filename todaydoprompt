@@ -44,6 +44,7 @@ function generate() {
 }
 
 function cross_loop() {
+	list_items;
 	item="x";
 	cross_items=();
 	while [[ ! -z "$item" ]]
@@ -65,6 +66,7 @@ function cross_loop() {
 }
 
 function uncross_loop() {
+	list_items;
 	item="x";
 	uncross_items=();
 	while [[ ! -z "$item" ]]

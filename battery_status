@@ -1,4 +1,5 @@
 #!/bin/bash
+# battery_status
 
 batfull="\uf240";
 batmost="\uf241";
@@ -6,7 +7,7 @@ bathalf="\uf242";
 batless="\uf243";
 batnone="\uf244";
 batchar="\uf376";
-CAP=$(batterycap);
+CAP=$(battery_cap);
 CAPINT=$(($CAP));
 if [[ $CAPINT > 75 ]]; then
 	batsym=$batfull

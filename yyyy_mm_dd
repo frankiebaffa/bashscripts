@@ -1,4 +1,5 @@
 #!/bin/bash
+# yyyy_mm_dd
 
 d=$(date +%Y%m%d)
 

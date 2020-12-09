@@ -1,0 +1,8 @@
+#!/bin/bash
+# top_bar_content
+
+while true; do
+	echo "%{l}$(battery_status)  $(wifi_status)%{l}%{r}$(get_date_time)%{r}";
+	sleep 1;
+done
+

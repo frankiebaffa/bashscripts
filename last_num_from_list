@@ -1,0 +1,5 @@
+#!/bin/bash
+# last_num_from_list
+
+echo -ne "$1" | grep "^[0-9]\+\." | tail -1 | sed "s/^\([0-9]\+\).\+$/\1/g";
+

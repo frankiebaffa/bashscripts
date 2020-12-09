@@ -22,6 +22,11 @@
 				"label": "cat",
 				"type": "bash",
 				"action": "todaydo -y -a 'first' -a 'second' -a 'third' -c"
+			},
+			{
+				"label": "append dry cat",
+				"type": "bash",
+				"action": "todaydo -d -a 'first' -a 'second' -a 'third' -c"
 			}
 		]
 	}

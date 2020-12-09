@@ -1,4 +1,5 @@
 #!/bin/bash
+# wifi_status
 
 ACTIV=$(nmcli -g name c show --active);
 STREN=$(nmcli -g ssid,signal d wifi list | \
@@ -9,16 +10,18 @@ FIRST="${ADDR[0]}"
 ACTUAL=$(echo $FIRST | sed "s/$ACTIV://g")
 STRENI=$(($ACTUAL));
 
-wififul="\uf1eb"
-wifimed="\uf6ab"
-wifilow="\uf6aa"
-wifinon="\uf6ac"
-if [[ $STRENI > 66 ]]; then
-	wifisym=$wififul
-elif [[ $STRENI > 33 ]]; then
-	wifisym=$wifimed
-else
-	wifisym=$wifilow
+wififul="\uf1eb";
+wifimed="\uf6ab";
+wifilow="\uf6aa";
+wifinon="\uf6ac";
+if [[ $STRENI -gt 66 ]]; then
+	wifisym=$wififul;
+elif [[ $STRENI -gt 33 ]]; then
+	wifisym=$wifimed;
+elif [[ $STRENI -gt 5 ]]; then
+	wifisym=$wifilow;
+elif [[ $STRENI == 0 ]]; then
+	wifisym=$wifinon;
 fi
 
 if [[ $ACTIV != '' ]]; then

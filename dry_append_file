@@ -9,7 +9,7 @@ then
 
 	if [ $dry == 0 ]
 	then
-		echo -ne $content >> $file;
+		echo -ne "$content" > $file;
 	fi
 else
 	echo -ne "dry_append_file requires 3 arguments\n";

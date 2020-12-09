@@ -32,6 +32,8 @@ uncross=0;
 add_sub_item=0;
 # }}}
 
+write_to_file=0;
+
 valid_args_passed=();
 
 function show_help() { # {{{
@@ -114,6 +116,7 @@ function check_arg() { # {{{
 			valid_args_passed+=("$arg");
 		elif [[ $arg == "-a" ]] || [[ $arg == "--append" ]]
 		then
+			write_to_file=1;
 			add_item=1;
 			get_item_value=1;
 			valid_args_passed+=("$arg");
@@ -124,6 +127,7 @@ function check_arg() { # {{{
 		elif [[ $arg == "-s" ]] || [[ $arg == "--subitem" ]]
 		then
 			add_sub_item=1;
+			write_to_file=1;
 			get_sub_item_num=1;
 			valid_args_passed+=("$arg");
 		elif [[ $arg == "-d" ]] || [[ $arg == "--dry-run" ]]
@@ -153,11 +157,13 @@ function check_arg() { # {{{
 		elif [[ $arg == "-x" ]] || [[ $arg == "--cross" ]]
 		then
 			cross=1;
+			write_to_file=1;
 			get_item_num=1;
 			valid_args_passed+=("$arg");
 		elif [[ $arg == "-u" ]] || [[ $arg == "--uncross" ]]
 		then
 			uncross=1;
+			write_to_file=1;
 			get_uncross_num=1;
 			valid_args_passed+=("$arg");
 		else
@@ -187,6 +193,12 @@ if [[ $prompt == 1 ]] # {{{
 then
 	todaydoprompt;
 	exit;
+fi # }}}
+
+# if $dry or $dummy force $write_to_file = 0
+if [[ $dry == 1 ]] || [[ $dummy == 1 ]] # {{{
+then
+	write_to_file=0;
 fi # }}}
 
 # if $verbose, print prog name and flipped switches
@@ -224,7 +236,7 @@ then
 	verbose_ne_print $verbose "dummy run, ignoring directory check.\n";
 fi # }}}
 
-d=$(yyyymmdd);
+d=$(yyyy_mm_dd);
 file=$file_dir/$d.md;
 file_did_not_exist=0;
 
@@ -260,7 +272,9 @@ fi # }}}
 # if $add_item, append items as list to text
 if [[ $add_item == 1 ]] # {{{
 then
-	i=0;
+	file_contents="$(cat $file)";
+	last_num="$(last_num_from_list "$file_contents")";
+	i=$(($last_num + 0));
 	for item in "${items_to_add[@]}"
 	do
 		i=$((i + 1));
@@ -268,20 +282,12 @@ then
 	done
 fi # }}}
 
-# check $append_text
-# if not blank, append to file
-if [[ ! -z $append_text ]] && [[ $dry == 0 ]] # {{{
-then
-	verbose_ne_print $verbose "appending text to file...";
-	dry_append_file $dry $file "$append_text" &&
-		verbose_ne_print $verbose "appended.\n";
-fi # }}}
-
 # if $dry and not $dummy, append $append_text to $(cat $file)
-if [[ $dry == 1 ]] && [[ $dummy == 0 ]] # {{{
+if [[ $file_did_not_exist == 0 ]] && [[ $dummy == 0 ]] # {{{
 then
 	file_text="$(cat $file)";
-	append_text="$file_text"+"$append_text";
+	file_text+="$append_text";
+	append_text="$file_text";
 fi # }}}
 
 # cross off item function
@@ -331,13 +337,13 @@ then
 fi # }}}
 
 # sub items function
-function sub_item() {
+function sub_item() { # {{{
 	line=$(echo -ne "$3" | grep "^$1\.\s")
 	echo "$line";
-}
+} # }}}
 
 # add sub items
-if [[ $add_sub_item == 1 ]] && [[ $dry == 0 ]] && [[ $dummy == 0 ]]
+if [[ $add_sub_item == 1 ]] && [[ $dry == 0 ]] && [[ $dummy == 0 ]] # {{{
 then
 	i=0;
 	while [[ i -lt ${#sub_items_to_add[@]} ]]
@@ -351,7 +357,16 @@ then
 elif [[ $add_sub_item == 1 ]]
 then
 	echo "nothing yet"
-fi
+fi # }}}
+
+# check $append_text
+# if not blank, append to file
+if [[ ! -z $append_text ]] && [[ $write_to_file == 1 ]] # {{{
+then
+	verbose_ne_print $verbose "appending text to file...";
+	dry_append_file $dry $file "$append_text" &&
+		verbose_ne_print $verbose "appended.\n";
+fi # }}}
 
 # if $fcat, not $dummy, not $dry, cat $file
 # if $fcat, $dummy or $dry, print $append_text

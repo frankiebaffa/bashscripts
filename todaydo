@@ -459,17 +459,17 @@ fi # }}}
 # if file was just created, append header to text
 if [[ $file_did_not_exist == 1 ]] # {{{
 then
-	text_to_write+="# $d Todo\n_ _ _\n";
+	text_to_write+="# $d Todo\n_ _ _";
 else
 	text_to_write+="$(cat $file)";
 fi # }}}
 
 # get unfinished items from file
-function get_unfin_from_file() {
+function get_unfin_from_file() { # {{{
 	contents="$(cat $1)";
 	unfin_delim="$(get_unfinished_from_list "$contents")";
 	echo -ne "$unfin_delim";
-}
+} # }}}
 
 # if $unfinished, append items from $unfinished_to_copy
 if [[ $unfinished == 1 ]] # {{{
@@ -500,7 +500,7 @@ if [[ $all_unfinished == 1 ]] # {{{
 then
 	s=20200101;
 	e=$d;
-	for (( c=$s; c<=$e; c++ ))
+	for (( c=$s; c<$e; c++ ))
 	do
 		past_file=$file_dir/$c.md;
 		if [[ -f $past_file ]]

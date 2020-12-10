@@ -3,4 +3,4 @@
 
 num=$1;
 text="$2";
-echo -ne "\n$num.\t[ ]\t"$text"";
+echo -ne "\n$num.\t[ ]\t$text";

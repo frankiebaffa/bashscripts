@@ -1,0 +1,6 @@
+#!/bin/bash
+# create_unfinished_list_item
+
+num=$1;
+text="$2";
+echo -ne "\n$num.\t[ ]\t"$text"";

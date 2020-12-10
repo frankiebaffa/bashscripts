@@ -33,6 +33,16 @@ uncross=0;
 edit=0;
 # add subitem
 add_sub_item=0;
+# define date to operate on
+day_change=0;
+# permenently operate on different day (set env var)
+time_machine=0;
+# turn off time machine
+time_machine_off=0;
+# copy unfinished tasks from date to today
+unfinished=0;
+# copy all unfinished
+all_unfinished=0;
 # }}}
 
 write_to_file=0;
@@ -45,28 +55,36 @@ $prog_name
 This program is used to create and manage to do lists for daily tasks.
 
 Arguments:
--h | --help                     Displays help information. (this message)
--v | --verbose                  Displays information as program runs.
--o | --open-file                Opens the file in your editor ($EDITOR) when \
-running is complete.
 -a | --append [item]            Adds a new item to the todo list.
--p | --prompt                   Uses prompt interface. (Command: todaydoprompt)
+-c | --concatenate              Displays the entire today file using the cat command.
 -d | --dry-run                  Runs the program without create any files or \
 directories.
--y | --dummy                    Runs the program as dry and also ignore's the \
-existing file.
--l | --list                     Lists the todo contents of today's file. \
-(runs after append)
--c | --concatenate              Displays the entire today file using the cat command.
--f | --create                   Creates the daily file when it does not exist.
--x | --cross [number]           Crosses the given number's corresponding item \
-off of the list.
--u | --uncross [number]         Uncrosses the given number's corresponding \
-item from the list.
 -e | --edit [number] [descript] Allows user to redefine the description for \
 the given number's corresponding item.
+-f | --create                   Creates the daily file when it does not exist.
+-h | --help                     Displays help information. (this message)
+-i | --copy-unfinished [yyyyMMdd] Copies the unfinished tasks from the given \
+date to the current todo list.
+-I | --copy-all-unfinished        Copies ALL unfinished tasks from dates prior \
+to current into the current todo list.
+-l | --list                     Lists the todo contents of today's file. \
+(runs after append)
+-n | --day-change [yyyyMMdd]    Runs program for the given day.
+-o | --open-file                Opens the file in your editor ($EDITOR) when \
+running is complete.
+-p | --prompt                   Uses prompt interface. (Command: todaydoprompt)
 -s | --subitem [number] [item]  Adds a subitem to the given number's \
 corresponding item.
+-t | --time-machine [yyyyMMdd]  Stores date in todaydo_time_warp.txt and \
+continues to run for the set day until specified.
+-T | --time-machine-off         Empties the file todaydo_time_warp.txt.
+-u | --uncross [number]         Uncrosses the given number's corresponding \
+item from the list.
+-v | --verbose                  Displays information as program runs.
+-x | --cross [number]           Crosses the given number's corresponding item \
+off of the list.
+-y | --dummy                    Runs the program as dry and also ignore's the \
+existing file.
 ";
 	exit;
 } # }}}
@@ -94,6 +112,18 @@ get_edit_num=0;
 get_edit_val=0;
 items_to_edit=();
 items_edit_to=();
+# }}}
+# day change variables {{{
+get_changed_day=0;
+changed_day="";
+# }}}
+# time machine variables {{{
+get_time_machine=0;
+time_warp_to="";
+# }}}
+# unfinished variables {{{
+unfinished_to_copy=();
+get_unfinished=0;
 # }}}
 
 # checks arguments to make sure they are valid and adjusts the corresponding
@@ -130,73 +160,165 @@ function check_arg() { # {{{
 	then
 		get_edit_val=0;
 		items_edit_to+=("${arg}");
+	elif [[ $get_changed_day == 1 ]]
+	then
+		get_changed_day=0;
+		changed_day="${arg}";
+	elif [[ $get_time_machine == 1 ]]
+	then
+		get_time_machine=0;
+		time_warp_to="${arg}";
+	elif [[ $get_unfinished == 1 ]]
+	then
+		get_unfinished=0;
+		unfinished_to_copy+=("${arg}");
 	else
 		if [[ $arg == "-v" ]] || [[ $arg == "--verbose" ]]
 		then
+			if [[ $verbose == 0 ]]
+			then
+				valid_args_passed+=("$arg");
+			fi
 			verbose=1;
-			valid_args_passed+=("$arg");
 		elif [[ $arg == "-o" ]] || [[ $arg == "--open-file" ]]
 		then
+			if [[ $open_fin == 0 ]]
+			then
+				valid_args_passed+=("$arg");
+			fi
 			open_fin=1;
-			valid_args_passed+=("$arg");
 		elif [[ $arg == "-a" ]] || [[ $arg == "--append" ]]
 		then
+			if [[ $add_item == 0 ]]
+			then
+				valid_args_passed+=("$arg");
+			fi
 			write_to_file=1;
 			add_item=1;
 			get_item_value=1;
-			valid_args_passed+=("$arg");
 		elif [[ $arg == "-p" ]] || [[ $arg == "--prompt" ]]
 		then
+			if [[ $prompt == 0 ]]
+			then
+				valid_args_passed+=("$arg");
+			fi
 			prompt=1;
-			valid_args_passed+=("$arg");
 		elif [[ $arg == "-s" ]] || [[ $arg == "--subitem" ]]
 		then
+			if [[ $add_sub_item == 0 ]]
+			then
+				valid_args_passed+=("$arg");
+			fi
 			add_sub_item=1;
 			write_to_file=1;
 			get_sub_item_num=1;
-			valid_args_passed+=("$arg");
 		elif [[ $arg == "-d" ]] || [[ $arg == "--dry-run" ]]
 		then
+			if [[ $dry == 0 ]]
+			then
+				valid_args_passed+=("$arg");
+			fi
 			dry=1;
-			valid_args_passed+=("$arg");
 		elif [[ $arg == "-l" ]] || [[ $arg == "--list" ]]
 		then
+			if [[ $list == 0 ]]
+			then
+				valid_args_passed+=("$arg");
+			fi
 			list=1;
-			valid_args_passed+=("$arg");
 		elif [[ $arg == "-c" ]] || [[ $arg == "--concatentate" ]]
 		then
+			if [[ $cat == 0 ]]
+			then
+				valid_args_passed+=("$arg");
+			fi
 			fcat=1;
-			valid_args_passed+=("$arg");
 		elif [[ $arg == "-y" ]] || [[ $arg == "--dummy" ]]
 		then
+			if [[ $dummy == 0 ]]
+			then
+				valid_args_passed+=("$arg");
+			fi
 			dummy=1;
 			dry=1;
-			valid_args_passed+=("$arg");
 		elif [[ $arg == "-f" ]] || [[ $arg == "--force-create" ]]
 		then
+			if [[ $create == 0 ]]
+			then
+				valid_args_passed+=("$arg");
+			fi
 			create=1;
-			valid_args_passed+=("$arg");
+			write_to_file=1;
 		elif [[ $arg == "-h" ]] || [[ $arg == "--help" ]]
 		then
 			show_help=1;
 		elif [[ $arg == "-x" ]] || [[ $arg == "--cross" ]]
 		then
+			if [[ $cross == 0 ]]
+			then
+				valid_args_passed+=("$arg");
+			fi
 			cross=1;
 			write_to_file=1;
 			get_cross_num=1;
-			valid_args_passed+=("$arg");
 		elif [[ $arg == "-u" ]] || [[ $arg == "--uncross" ]]
 		then
+			if [[ $uncross == 0 ]]
+			then
+				valid_args_passed+=("$arg");
+			fi
 			uncross=1;
 			write_to_file=1;
 			get_uncross_num=1;
-			valid_args_passed+=("$arg");
 		elif [[ $arg == "-e" ]] || [[ $arg == "--edit" ]]
 		then
+			if [[ $edit == 0 ]]
+			then
+				valid_args_passed+=("$arg");
+			fi
 			edit=1;
 			write_to_file=1;
 			get_edit_num=1;
-			valid_args_passed+=("$arg");
+		elif [[ $arg == "-n" ]] || [[ $arg == "--day-change" ]]
+		then
+			if [[ $day_change == 0 ]]
+			then
+				valid_args_passed+=("$arg");
+			fi
+			day_change=1;
+			get_changed_day=1;
+		elif [[ $arg == "-t" ]] || [[ $arg == "--time-machine" ]]
+		then
+			if [[ $time_machine == 0 ]]
+			then
+				valid_args_passed+=("$arg");
+			fi
+			time_machine=1;
+			get_time_machine=1;
+		elif [[ $arg == "-T" ]] || [[ $arg == "--time-machine-off" ]]
+		then
+			if [[ $time_machine_off ]]
+			then
+				valid_args_passed+=("$arg");
+			fi
+			time_machine_off=1;
+		elif [[ $arg == "-i" ]] || [[ $arg == "--copy-unfinished" ]]
+		then
+			if [[ $unfinished == 0 ]]
+			then
+				valid_args_passed+=("$arg");
+			fi
+			unfinished=1;
+			get_unfinished=1;
+			write_to_file=1;
+		elif [[ $arg == "-I" ]] || [[ $arg == "--copy-all-unfinished" ]]
+		then
+			if [[ $all_unfinished == 0 ]]
+			then
+				valid_args_passed+=("$arg");
+			fi
+			all_unfinished=1;
+			write_to_file=1;
 		else
 			echo -ne "Invalid argument: $arg.\n";
 			echo -ne "USAGE:\n";
@@ -267,7 +389,46 @@ then
 	verbose_ne_print $verbose "dummy run, ignoring directory check.\n";
 fi # }}}
 
-d=$(yyyy_mm_dd);
+time_warp_file=todaydo_time_warp.txt;
+
+# if time warp file does not exist, create
+if [[ ! -f $time_warp_file ]] # {{{
+then
+	touch $time_warp_file;
+fi # }}}
+
+# empty $time_warp_file if $time_machine_off
+if [[ $time_machine_off == 1 ]] # {{{
+then
+	echo -ne "" > $time_warp_file;
+fi # }}}
+
+# store date in $time_warp_file if $time_machine
+if [[ $time_machine == 1 ]] # {{{
+then
+	echo -ne $time_warp_to > $time_warp_file;
+fi # }}}
+
+d=""
+time_warp_from_file="$(cat $time_warp_file)";
+
+# set date if $time_warp_from_file is not empty
+if [[ ! -z "$time_warp_from_file" ]] # {{{
+then
+	d=$time_warp_from_file;
+	time_machine=1;
+	echo -ne "Time machine: ON. Warping to $time_warp_from_file\n"
+else
+	d=$(yyyy_mm_dd);
+fi
+# }}}
+
+# if $day_change
+if [[ $day_change == 1 ]] # {{{
+then
+	d=$changed_day;
+fi # }}}
+
 file=$file_dir/$d.md;
 file_did_not_exist=0;
 
@@ -303,6 +464,58 @@ else
 	text_to_write+="$(cat $file)";
 fi # }}}
 
+# get unfinished items from file
+function get_unfin_from_file() {
+	contents="$(cat $1)";
+	unfin_delim="$(get_unfinished_from_list "$contents")";
+	echo -ne "$unfin_delim";
+}
+
+# if $unfinished, append items from $unfinished_to_copy
+if [[ $unfinished == 1 ]] # {{{
+then
+	file_contents="$(cat $file)";
+	last_num=$(last_num_from_list "$file_contents");
+	for prev_date in "${unfinished_to_copy[@]}"
+	do
+		old_file=$file_dir/$prev_date.md;
+		if [[ -f $old_file ]]
+		then
+			unfin_delim="$(get_unfin_from_file "$old_file")";
+			IFS=',' read -ra unfin_arr <<< "$unfin_delim";
+			for item in "${unfin_arr[@]}"
+			do
+				last_num=$((last_num + 1));
+				text_to_write+=$(create_unfinished_list_item $last_num "$item");
+			done
+		else
+			echo -ne "File $old_file not found.\n";
+			exit;
+		fi
+	done
+fi # }}}
+
+# if $all_unfinished, gather and append all unfinished items
+if [[ $all_unfinished == 1 ]] # {{{
+then
+	s=20200101;
+	e=$d;
+	for (( c=$s; c<=$e; c++ ))
+	do
+		past_file=$file_dir/$c.md;
+		if [[ -f $past_file ]]
+		then
+			unfin_delim="$(get_unfin_from_file "$past_file")";
+			IFS=',' read -ra unfin_arr <<< "$unfin_delim";
+			for item in "${unfin_arr[@]}"
+			do
+				last_num=$((last_num + 1));
+				text_to_write+=$(create_unfinished_list_item $last_num "$item");
+			done
+		fi
+	done
+fi # }}}
+
 # if $add_item, append items as list to text
 if [[ $add_item == 1 ]] # {{{
 then
@@ -312,7 +525,7 @@ then
 	for item in "${items_to_add[@]}"
 	do
 		i=$((i + 1));
-		text_to_write+="\n$i.\t[ ]\t$item";
+		text_to_write+=$(create_unfinished_list_item $i $item);
 	done
 fi # }}}
 
@@ -386,7 +599,7 @@ fi # }}}
 if [[ ! -z $text_to_write ]] && [[ $write_to_file == 1 ]] # {{{
 then
 	verbose_ne_print $verbose "appending text to file...";
-	dry_append_file $dry $file "$text_to_write" &&
+	dry_write_file $dry $file "$text_to_write" &&
 		verbose_ne_print $verbose "appended.\n";
 fi # }}}
 

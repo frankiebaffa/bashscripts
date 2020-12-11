@@ -1,0 +1,16 @@
+#!/bin/bash
+# get_all_from_list
+
+list=$1
+#testlist="\
+#1.	[x]	This item is finished
+#2.	[ ]	This item is unfinished
+#3.	[x]	This item is also finished
+#4.	[ ]	This item is also unfinished";
+items="$(echo -ne "$list" | \
+	grep "^[0-9]\+\.\s\+\[.\]" | \
+	perl -ne "s/^[0-9]+\.\s+\[.\]\s+//g;print;" | \
+	perl -ne "s/\n/,/g;print;")";
+
+len_min_one=$((${#items} - 1));
+echo -ne ${items:0:$len_min_one};

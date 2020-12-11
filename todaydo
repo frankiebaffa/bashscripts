@@ -46,8 +46,6 @@ unfinished=0;
 all_unfinished=0;
 # }}}
 
-write_to_file=0;
-
 valid_args_passed=();
 
 # break combined args
@@ -221,7 +219,6 @@ function check_arg() { # {{{
 			then
 				valid_args_passed+=("$arg");
 			fi
-			write_to_file=1;
 			add_item=1;
 			get_item_value=1;
 		elif [[ $arg == "-p" ]] || [[ $arg == "--prompt" ]]
@@ -238,7 +235,6 @@ function check_arg() { # {{{
 				valid_args_passed+=("$arg");
 			fi
 			add_sub_item=1;
-			write_to_file=1;
 			get_sub_item_num=1;
 		elif [[ $arg == "-d" ]] || [[ $arg == "--dry-run" ]]
 		then
@@ -276,7 +272,6 @@ function check_arg() { # {{{
 				valid_args_passed+=("$arg");
 			fi
 			create=1;
-			write_to_file=1;
 		elif [[ $arg == "-h" ]] || [[ $arg == "--help" ]]
 		then
 			show_help=1;
@@ -287,7 +282,6 @@ function check_arg() { # {{{
 				valid_args_passed+=("$arg");
 			fi
 			cross=1;
-			write_to_file=1;
 			get_cross_num=1;
 		elif [[ $arg == "-u" ]] || [[ $arg == "--uncross" ]]
 		then
@@ -296,7 +290,6 @@ function check_arg() { # {{{
 				valid_args_passed+=("$arg");
 			fi
 			uncross=1;
-			write_to_file=1;
 			get_uncross_num=1;
 		elif [[ $arg == "-E" ]] || [[ $arg == "--edit" ]]
 		then
@@ -305,7 +298,6 @@ function check_arg() { # {{{
 				valid_args_passed+=("$arg");
 			fi
 			edit=1;
-			write_to_file=1;
 			get_edit_num=1;
 		elif [[ $arg == "-N" ]] || [[ $arg == "--day-change" ]]
 		then
@@ -338,7 +330,6 @@ function check_arg() { # {{{
 			fi
 			unfinished=1;
 			get_unfinished=1;
-			write_to_file=1;
 		elif [[ $arg == "-I" ]] || [[ $arg == "--copy-all-unfinished" ]]
 		then
 			if [[ $all_unfinished == 0 ]]
@@ -346,7 +337,6 @@ function check_arg() { # {{{
 				valid_args_passed+=("$arg");
 			fi
 			all_unfinished=1;
-			write_to_file=1;
 		else
 			echo -ne "Invalid argument: $arg.\n";
 			echo -ne "USAGE:\n";
@@ -383,12 +373,6 @@ if [[ $prompt == 1 ]] # {{{
 then
 	todaydoprompt;
 	exit;
-fi # }}}
-
-# if $dry or $dummy force $write_to_file = 0
-if [[ $dry == 1 ]] || [[ $dummy == 1 ]] # {{{
-then
-	write_to_file=0;
 fi # }}}
 
 # if $verbose, print prog name and flipped switches
@@ -508,11 +492,26 @@ function get_unfin_from_file() { # {{{
 	echo -ne "$unfin_delim";
 } # }}}
 
+# if $add_item, append items as list to text
+if [[ $add_item == 1 ]] # {{{
+then
+	file_contents="$(cat $file)";
+	last_num="$(last_num_from_list "$file_contents")";
+	i=$(($last_num + 0));
+	for item in "${items_to_add[@]}"
+	do
+		i=$((i + 1));
+		text_to_write+=$(create_unfinished_list_item $i "$item");
+	done
+fi # }}}
+
+unfinished_array=();
+
 # if $unfinished, append items from $unfinished_to_copy
 if [[ $unfinished == 1 ]] # {{{
 then
 	file_contents="$(cat $file)";
-	last_num=$(last_num_from_list "$file_contents");
+	last_num=$(last_num_from_list "$text_to_write");
 	for prev_date in "${unfinished_to_copy[@]}"
 	do
 		old_file=$file_dir/$prev_date.md;
@@ -522,8 +521,23 @@ then
 			IFS=',' read -ra unfin_arr <<< "$unfin_delim";
 			for item in "${unfin_arr[@]}"
 			do
-				last_num=$((last_num + 1));
-				text_to_write+=$(create_unfinished_list_item $last_num "$item");
+				add_it=1;
+				IFS=',' \
+					read -ra current_array \
+					<<< "$(get_all_from_list "$text_to_write")";
+				for existing_item in "${current_array[@]}"
+				do
+					if [[ "$item" == "$existing_item" ]]
+					then
+						add_it=0;
+						break;
+					fi
+				done
+				if [[ $add_it == 1 ]]
+				then
+					last_num=$((last_num + 1));
+					text_to_write+=$(create_unfinished_list_item $last_num "$item");
+				fi
 			done
 		else
 			echo -ne "File $old_file not found.\n";
@@ -537,6 +551,7 @@ if [[ $all_unfinished == 1 ]] # {{{
 then
 	s=20200101;
 	e=$d;
+	last_num=$(last_num_from_list "$text_to_write");
 	for (( c=$s; c<$e; c++ ))
 	do
 		past_file=$file_dir/$c.md;
@@ -546,23 +561,25 @@ then
 			IFS=',' read -ra unfin_arr <<< "$unfin_delim";
 			for item in "${unfin_arr[@]}"
 			do
-				last_num=$((last_num + 1));
-				text_to_write+=$(create_unfinished_list_item $last_num "$item");
+				add_it=1;
+				IFS=',' \
+					read -ra current_array \
+					<<< "$(get_all_from_list "$text_to_write")";
+				for existing_item in "${current_array[@]}"
+				do
+					if [[ "$item" == "$existing_item" ]]
+					then
+						add_it=0;
+						break;
+					fi
+				done
+				if [[ $add_it == 1 ]]
+				then
+					last_num=$((last_num + 1));
+					text_to_write+=$(create_unfinished_list_item $last_num "$item");
+				fi
 			done
 		fi
-	done
-fi # }}}
-
-# if $add_item, append items as list to text
-if [[ $add_item == 1 ]] # {{{
-then
-	file_contents="$(cat $file)";
-	last_num="$(last_num_from_list "$file_contents")";
-	i=$(($last_num + 0));
-	for item in "${items_to_add[@]}"
-	do
-		i=$((i + 1));
-		text_to_write+=$(create_unfinished_list_item $i "$item");
 	done
 fi # }}}
 
@@ -631,9 +648,9 @@ then
 	done
 fi # }}}
 
-# check $text_to_write and $write_to_file
+# check $text_to_write
 # if not blank, append to file
-if [[ ! -z $text_to_write ]] && [[ $write_to_file == 1 ]] # {{{
+if [[ ! -z $text_to_write ]] # {{{
 then
 	verbose_ne_print $verbose "appending text to file...";
 	dry_write_file $dry $file "$text_to_write" &&

@@ -2,6 +2,7 @@
 # todaydo
 
 prog_name="todaydo";
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd)";
 
 # initialize switches for valid arguments
 # arg switches {{{
@@ -49,6 +50,33 @@ write_to_file=0;
 
 valid_args_passed=();
 
+# break combined args
+# -vfI == -v -f -I
+function arg_breaker() { # {{{
+	arg="$1";
+	# if char[0] == -, char[1] != -, char[2] exists
+	if [[ "${arg:0:1}" == "-" ]] \
+		&& [[ "${arg:1:2}" != "-" ]] \
+		&& [[ ! -z "${arg:2:3}" ]]
+	then
+		new_arg="";
+		no_dash="${arg:1:${#arg}}";
+		i=0;
+		dlim=""
+		while [[ ! -z "${no_dash:i:1}" ]]
+		do
+			single="${no_dash:i:1}";
+			new_arg+=$dlim;
+			new_arg+="-$single";
+			dlim=" ";
+			i=$((i + 1));
+		done
+		echo -ne "$new_arg";
+	else
+		echo -ne "$arg";
+	fi
+} # }}}
+
 function show_help() { # {{{
 	echo -ne "\
 $prog_name
@@ -59,7 +87,7 @@ Arguments:
 -c | --concatenate              Displays the entire today file using the cat command.
 -d | --dry-run                  Runs the program without create any files or \
 directories.
--e | --edit [number] [descript] Allows user to redefine the description for \
+-E | --edit [number] [descript] Allows user to redefine the description for \
 the given number's corresponding item.
 -f | --create                   Creates the daily file when it does not exist.
 -h | --help                     Displays help information. (this message)
@@ -69,7 +97,7 @@ date to the current todo list.
 to current into the current todo list.
 -l | --list                     Lists the todo contents of today's file. \
 (runs after append)
--n | --day-change [yyyyMMdd]    Runs program for the given day.
+-N | --day-change [yyyyMMdd]    Runs program for the given day.
 -o | --open-file                Opens the file in your editor ($EDITOR) when \
 running is complete.
 -p | --prompt                   Uses prompt interface. (Command: todaydoprompt)
@@ -270,7 +298,7 @@ function check_arg() { # {{{
 			uncross=1;
 			write_to_file=1;
 			get_uncross_num=1;
-		elif [[ $arg == "-e" ]] || [[ $arg == "--edit" ]]
+		elif [[ $arg == "-E" ]] || [[ $arg == "--edit" ]]
 		then
 			if [[ $edit == 0 ]]
 			then
@@ -279,7 +307,7 @@ function check_arg() { # {{{
 			edit=1;
 			write_to_file=1;
 			get_edit_num=1;
-		elif [[ $arg == "-n" ]] || [[ $arg == "--day-change" ]]
+		elif [[ $arg == "-N" ]] || [[ $arg == "--day-change" ]]
 		then
 			if [[ $day_change == 0 ]]
 			then
@@ -331,7 +359,16 @@ function check_arg() { # {{{
 # iterate through args and set switches
 for arg in "$@" # {{{
 do
-	check_arg "$arg";
+	split_args=$(arg_breaker "$arg");
+	if [[ "${split_args:0:1}" == "-" ]]
+	then
+		for split_arg in $split_args
+		do
+			check_arg "$split_arg";
+		done
+	else
+		check_arg "$split_args";
+	fi
 done # }}}
 
 # if $show_help, then show help
@@ -389,7 +426,7 @@ then
 	verbose_ne_print $verbose "dummy run, ignoring directory check.\n";
 fi # }}}
 
-time_warp_file=todaydo_time_warp.txt;
+time_warp_file=$script_dir/todaydo_time_warp.txt;
 
 # if time warp file does not exist, create
 if [[ ! -f $time_warp_file ]] # {{{

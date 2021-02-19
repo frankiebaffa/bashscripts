@@ -6,6 +6,9 @@ grip_check="$(command -v grip)";
 if [[ -z "$grip_check" ]]
 then
 	echo "Program \"grip\" is required.";
+	echo "linux: 'pip install grip'";
+	echo "MacOS: 'brew install grip'";
+	echo "source: https://github.com/joeyespo/grip";
 	exit;
 fi
 
@@ -13,6 +16,8 @@ puppeteer_check="$(command -v puppeteer-pdf)";
 if [[ -z "$puppeteer_check" ]]
 then
 	echo "Program \"puppeteer-pdf\" is required.";
+	echo "npm: 'npm -i puppeteer-pdf -g'";
+	echo "source: https://github.com/coletiv/puppeteer-pdf'";
 	exit;
 fi
 
@@ -103,11 +108,6 @@ html=${html//"<p>\\pagebreak</p>"/"<div style=\"page-break-after:always!importan
 # tag represented by "//small//" inline to open and "//-small//" inline to close
 html=${html//"//small//"/"<small>"}
 html=${html//"//-small//"/"</small>"}
-# handle custom strikethrough tag
-# tag represented by "//strike//" inline to open and "//-strike//"
-# inline to close
-html=${html//"//strike//"/"<strike>"}
-html=${html//"//-strike//"/"</strike>"}
 
 echo "$html" > "$output.html";
 

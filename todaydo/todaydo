@@ -48,33 +48,6 @@ all_unfinished=0;
 
 valid_args_passed=();
 
-# break combined args
-# -vfI == -v -f -I
-function arg_breaker() { # {{{
-	arg="$1";
-	# if char[0] == -, char[1] != -, char[2] exists
-	if [[ "${arg:0:1}" == "-" ]] \
-		&& [[ "${arg:1:2}" != "-" ]] \
-		&& [[ ! -z "${arg:2:3}" ]]
-	then
-		new_arg="";
-		no_dash="${arg:1:${#arg}}";
-		i=0;
-		dlim=""
-		while [[ ! -z "${no_dash:i:1}" ]]
-		do
-			single="${no_dash:i:1}";
-			new_arg+=$dlim;
-			new_arg+="-$single";
-			dlim=" ";
-			i=$((i + 1));
-		done
-		echo -ne "$new_arg";
-	else
-		echo -ne "$arg";
-	fi
-} # }}}
-
 function show_help() { # {{{
 	echo -ne "\
 $prog_name
@@ -204,7 +177,7 @@ function check_arg() { # {{{
 			if [[ $verbose == 0 ]]
 			then
 				valid_args_passed+=("$arg");
-			fi
+f		fi
 			verbose=1;
 		elif [[ $arg == "-o" ]] || [[ $arg == "--open-file" ]]
 		then
@@ -492,6 +465,13 @@ function get_unfin_from_file() { # {{{
 	echo -ne "$unfin_delim";
 } # }}}
 
+# get all items from file
+function get_all_from_file() { # {{{
+	contents="$(cat $1)";
+	all_delim="$(get_all_from_list "$contents")";
+	echo -ne "$all_delim";
+} # }}}
+
 # if $add_item, append items as list to text
 if [[ $add_item == 1 ]] # {{{
 then
@@ -505,6 +485,7 @@ then
 	done
 fi # }}}
 
+all_arr=();
 unfinished_array=();
 
 # if $unfinished, append items from $unfinished_to_copy
@@ -551,33 +532,25 @@ if [[ $all_unfinished == 1 ]] # {{{
 then
 	s=20200101;
 	e=$d;
+	# get highest number from current file
 	last_num=$(last_num_from_list "$text_to_write");
 	for (( c=$s; c<$e; c++ ))
 	do
+		# get content of past file
 		past_file=$file_dir/$c.md;
 		if [[ -f $past_file ]]
 		then
+			all_delim="$(get_all_from_file "$past_file")";
+			IFS=',' read -ra all_items <<< "$all_delim";
+			for item in "${all_items[@]}"
+			do
+				all_arr+=("$item");
+			done
 			unfin_delim="$(get_unfin_from_file "$past_file")";
 			IFS=',' read -ra unfin_arr <<< "$unfin_delim";
 			for item in "${unfin_arr[@]}"
 			do
-				add_it=1;
-				IFS=',' \
-					read -ra current_array \
-					<<< "$(get_all_from_list "$text_to_write")";
-				for existing_item in "${current_array[@]}"
-				do
-					if [[ "$item" == "$existing_item" ]]
-					then
-						add_it=0;
-						break;
-					fi
-				done
-				if [[ $add_it == 1 ]]
-				then
-					last_num=$((last_num + 1));
-					text_to_write+=$(create_unfinished_list_item $last_num "$item");
-				fi
+				unfinished_array+=("$item");
 			done
 		fi
 	done

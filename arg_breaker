@@ -1,0 +1,28 @@
+#!/bin/bash
+# argbreaker
+# break combined arguments
+# -vfI == -v -f -I
+
+arg="$1";
+# if char[0] == -, char[1] != -, char[2] exists
+if [[ "${arg:0:1}" == "-" ]] \
+	&& [[ "${arg:1:2}" != "-" ]] \
+	&& [[ ! -z "${arg:2:3}" ]]
+then
+	new_arg="";
+	no_dash="${arg:1:${#arg}}";
+	i=0;
+	dlim=""
+	while [[ ! -z "${no_dash:i:1}" ]]
+	do
+		single="${no_dash:i:1}";
+		new_arg+=$dlim;
+		new_arg+="-$single";
+		dlim=" ";
+		i=$((i + 1));
+	done
+	echo -ne "$new_arg";
+else
+	echo -ne "$arg";
+fi
+

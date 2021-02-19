@@ -1,0 +1,30 @@
+#!/bin/bash
+# array_contains
+# returns 1 if the array contains the value
+# returns 0 if not
+
+has=0;
+if [[ -z "$1" ]]
+then
+	echo "Please include value";
+	exit;
+fi
+
+if [[ -z "$2" ]]
+then
+	echo "Please include array";
+	exit;
+fi
+
+for item in "${@:2}"
+do
+	if [[ "$item" == "$1" ]]
+	then
+		echo -ne 1;
+		exit;
+	fi
+done
+
+echo -ne 0;
+exit;
+

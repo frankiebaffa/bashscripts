@@ -1,0 +1,134 @@
+#!/bin/bash
+# md_to_pdf
+# converts a github-flavored-markdown file to an github-styled html page
+
+grip_check="$(command -v grip)";
+if [[ -z "$grip_check" ]]
+then
+	echo "Program \"grip\" is required.";
+	exit;
+fi
+
+puppeteer_check="$(command -v puppeteer-pdf)";
+if [[ -z "$puppeteer_check" ]]
+then
+	echo "Program \"puppeteer-pdf\" is required.";
+	exit;
+fi
+
+input="";
+getinput="0";
+output="";
+getoutput="0";
+force="0";
+debug_html="0";
+
+for arg in "$@"
+do
+	if [[ "$getinput" == "0" && "$getoutput" == "0" ]]
+	then
+		if [[ "$arg" == "-i" || "$arg" == "--input" ]]
+		then
+			getinput="1";
+		elif [[ "$arg" == "-o" || "$arg" == "--output" ]]
+		then
+			getoutput="1";
+		elif [[ "$arg" == "-f" || "$arg" == "--force" ]]
+		then
+			force="1";
+		elif [[ "$arg" == "--debug-html" ]]
+		then
+			debug_html="1";
+		else
+			echo "Unrecognized argument $arg";
+			exit;
+		fi
+	elif [[ "$getinput" == "1" ]]
+	then
+		input="$arg";
+		getinput="0";
+	elif [[ "$getoutput" == "1" ]]
+	then
+		output="$arg";
+		getoutput="0";
+	fi
+done
+
+if [[ -z "$input" ]]
+then
+	echo "Missing value for input";
+	exit;
+fi
+
+if [[ -z "$output" ]]
+then
+	echo "Missing value for output";
+	exit;
+fi
+
+if [[ ! -f "$input" ]]
+then
+	echo "Input file does not exist."
+	exit;
+fi
+
+if [[ -f "$output.html" && "$force" == "0" ]]
+then
+	echo "File \"$output.html\" would be overwritten then deleted.";
+	exit;
+fi
+
+if [[ -f "$output.pdf" && "$force" == "0" ]]
+then
+	echo "File \"$output.pdf\" would be overwritten.";
+	exit;
+fi
+
+html="$(grip "$input" --export -)";
+html+="
+<style>
+.preview-page {
+	margin: 0 !important;
+}
+h3:nth-child(1) {
+	display: none !important;
+}
+</style>
+";
+
+# handle page break
+# break represented by "\pagebreak" on a line by iteself
+html=${html//"<p>\\pagebreak</p>"/"<div style=\"page-break-after:always!important;\"></div>"}
+# handle custom small tag
+# tag represented by "//small//" inline to open and "//-small//" inline to close
+html=${html//"//small//"/"<small>"}
+html=${html//"//-small//"/"</small>"}
+# handle custom strikethrough tag
+# tag represented by "//strike//" inline to open and "//-strike//"
+# inline to close
+html=${html//"//strike//"/"<strike>"}
+html=${html//"//-strike//"/"</strike>"}
+
+echo "$html" > "$output.html";
+
+M="0.25in";
+puppeteer-pdf \
+	"$output.html" \
+	--path "$output.og.pdf" \
+	--marginTop="$M" \
+	--marginBottom="$M" \
+	--marginLeft="$M" \
+	--marginRight="$M" \
+	--printBackground;
+
+if [[ "$debug_html" == "0" ]]
+then
+	rm "$output.html";
+fi
+
+# compress pdf
+pdf_compress "$output.og.pdf" "$output.pdf"
+
+# delete og
+rm "$output.og.pdf";
+

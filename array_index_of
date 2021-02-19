@@ -1,0 +1,30 @@
+#!/bin/bash
+# array_index_of
+# returns the index of the given value in the given array
+# returns -1 if it does not appear
+
+i=0;
+if [[ -z "$1" ]]
+then
+	echo "Please include value";
+	exit;
+fi
+
+if [[ -z "$2" ]]
+then
+	echo "Please include array";
+	exit;
+fi
+
+for item in "${@:2}"
+do
+	if [[ "$item" == "$1" ]]
+	then
+		echo -ne "$i";
+		exit;
+	fi
+	i=$((i+1));
+done
+
+echo -ne "-1";
+

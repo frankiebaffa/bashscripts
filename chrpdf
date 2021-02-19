@@ -1,0 +1,8 @@
+#!/bin/bash
+# chrpdf
+# requires google chrome
+
+google-chrome-stable \
+	--headless \
+	--disable-gpu \
+	--print-to-pdf "$1"

@@ -2,6 +2,8 @@
 # md_to_pdf
 # converts a github-flavored-markdown file to an github-styled html page
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 grip_check="$(command -v grip)";
 if [[ -z "$grip_check" ]]
 then
@@ -89,25 +91,33 @@ then
 	exit;
 fi
 
-html="$(grip "$input" --export -)";
-html+="
-<style>
-.preview-page {
-	margin: 0 !important;
-}
-h3:nth-child(1) {
-	display: none !important;
-}
-</style>
-";
+html="$(grip --user="$GIT_USER" --pass="$GIT_PASS" "$input" --export -)";
+html+="<style>$(<$DIR/.md_to_pdf/style.css)</style>";
 
+# insert font awesome after head
+fonta="s/<\/head>/<script src=\"https:\/\/kit.fontawesome.com\/66d3b9dbe0.js\" crossorigin=\"anonymous\"><\/script><\/head>/g";
+html="$(echo "$html" | sed "$fonta")";
 # handle page break
 # break represented by "\pagebreak" on a line by iteself
-html=${html//"<p>\\pagebreak</p>"/"<div style=\"page-break-after:always!important;\"></div>"}
+small_open="s/\/\/small\/\//<small>/g";
+small_close="s/\/\/-small\/\//<\/small>/g";
+html="$(echo "$html" | sed "$small_open")";
+html="$(echo "$html" | sed "$small_close")";
 # handle custom small tag
 # tag represented by "//small//" inline to open and "//-small//" inline to close
 html=${html//"//small//"/"<small>"}
 html=${html//"//-small//"/"</small>"}
+# handle font-awesome tags
+fas=($(echo "$html" | grep -o '//fas [a-zA-Z0-9\-]\+//'))
+for ((i = 0; i < "${#fas[@]}"; i+=2))
+do
+	fa="${fas[$i]} ${fas[(($i+1))]}"
+	len=${#fa};
+	fa="$(echo ${fa:2:(($len-4))})"
+	fa_end="";
+	replace="s/\/\/$fa\/\//<span class=\"$fa\"><\/span>/g";
+	html="$(echo "$html" | sed "$replace")";
+done;
 
 echo "$html" > "$output.html";
 
@@ -119,6 +129,7 @@ puppeteer-pdf \
 	--marginBottom="$M" \
 	--marginLeft="$M" \
 	--marginRight="$M" \
+	--format="Letter" \
 	--printBackground;
 
 if [[ "$debug_html" == "0" ]]

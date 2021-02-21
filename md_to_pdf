@@ -2,7 +2,8 @@
 # md_to_pdf
 # converts a github-flavored-markdown file to an github-styled html page
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )";
+HELP="$(<$DIR/.md_to_pdf/readme.txt)";
 
 grip_check="$(command -v grip)";
 if [[ -z "$grip_check" ]]
@@ -34,7 +35,11 @@ for arg in "$@"
 do
 	if [[ "$getinput" == "0" && "$getoutput" == "0" ]]
 	then
-		if [[ "$arg" == "-i" || "$arg" == "--input" ]]
+		if [[ "$arg" == "-h" || "$arg" == "--help" ]]
+		then
+			echo "$HELP";
+			exit 0;
+		elif [[ "$arg" == "-i" || "$arg" == "--input" ]]
 		then
 			getinput="1";
 		elif [[ "$arg" == "-o" || "$arg" == "--output" ]]
@@ -43,7 +48,7 @@ do
 		elif [[ "$arg" == "-f" || "$arg" == "--force" ]]
 		then
 			force="1";
-		elif [[ "$arg" == "--debug-html" ]]
+		elif [[ "$arg" == "-d" || "$arg" == "--debug-html" ]]
 		then
 			debug_html="1";
 		else
@@ -99,14 +104,13 @@ fonta="s/<\/head>/<script src=\"https:\/\/kit.fontawesome.com\/66d3b9dbe0.js\" c
 html="$(echo "$html" | sed "$fonta")";
 # handle page break
 # break represented by "\pagebreak" on a line by iteself
+html="$(echo "$html" | sed "s/\\\\pagebreak<\/p>/<\/p><div style=\"page-break-after:always!important;\"><\/div>/g")";
+# handle custom small tag
+# tag represented by "//small//" inline to open and "//-small//" inline to close
 small_open="s/\/\/small\/\//<small>/g";
 small_close="s/\/\/-small\/\//<\/small>/g";
 html="$(echo "$html" | sed "$small_open")";
 html="$(echo "$html" | sed "$small_close")";
-# handle custom small tag
-# tag represented by "//small//" inline to open and "//-small//" inline to close
-html=${html//"//small//"/"<small>"}
-html=${html//"//-small//"/"</small>"}
 # handle font-awesome tags
 fas=($(echo "$html" | grep -o '//fas [a-zA-Z0-9\-]\+//'))
 for ((i = 0; i < "${#fas[@]}"; i+=2))

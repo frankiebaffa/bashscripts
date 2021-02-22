@@ -74,28 +74,23 @@ then
 	exit;
 fi
 
-input="";
-getinput="0";
-output="";
-getoutput="0";
+filename="";
+getfilename="0";
 force="0";
 debug_html="0";
 getlogfile="0";
 args="$(argbreaker "$@")";
 for arg in ${args[@]}
 do
-	if [[ "$getinput" == "0" && "$getoutput" == "0" && "$getlogfile" == "0" ]]
+	if [[ "$getfilename" == "0" && "$getlogfile" == "0" ]]
 	then
 		if [[ "$arg" == "-h" || "$arg" == "--help" ]]
 		then
 			echo "$HELP";
 			exit 0;
-		elif [[ "$arg" == "-i" || "$arg" == "--input" ]]
+		elif [[ "$arg" == "-F" || "$arg" == "--filename" ]]
 		then
-			getinput="1";
-		elif [[ "$arg" == "-o" || "$arg" == "--output" ]]
-		then
-			getoutput="1";
+			getfilename="1";
 		elif [[ "$arg" == "-f" || "$arg" == "--force" ]]
 		then
 			force="1";
@@ -115,61 +110,59 @@ do
 			echo "Unrecognized argument $arg";
 			exit;
 		fi
-	elif [[ "$getinput" == "1" ]]
+	elif [[ "$getfilename" == "1" ]]
 	then
-		input="$arg";
-		getinput="0";
-	elif [[ "$getoutput" == "1" ]]
-	then
-		output="$arg";
-		getoutput="0";
+		filename="$arg";
+		getfilename="0";
 	elif [[ "$getlogfile" == "1" ]]
 	then
 		logfile="$arg";
 		getlogfile="0";
 	fi
 done
-if [[ -z "$input" ]]
+if [[ -z "$filename" ]]
 then
-	echo "Missing value for input";
+	echo "Missing value for filename";
 	exit;
 fi
 
-if [[ -z "$output" ]]
-then
-	echo "Missing value for output";
-	exit;
-fi
-
-if [[ ! -f "$input" ]]
+if [[ ! -f "$filename.md" && ! -f "$filename.markdown" ]]
 then
 	echo "Input file does not exist."
 	exit;
 fi
-
-if [[ -f "$output.html" && "$force" == "0" ]]
+inputfile="";
+if [[ -f "$filename.md" ]]
 then
-	echo "File \"$output.html\" would be overwritten then deleted.";
-	exit;
-elif [[ -f "$output.html" && "$force" == "1" && "$debug_html" == "1" ]]
+	inputfile="$filename.md";
+elif [[ -f "$filename.markdown" ]]
 then
-	printer "File \"$output.html\" will be overwritten.";
-elif [[ -f "$output.html" && "$force" == "1" && "$debug_html" == "0" ]]
-then
-	printer "File \"$output.html\" will be overwritten and deleted.";
+	inputfile="$filename.markdown";
 fi
 
-if [[ -f "$output.pdf" && "$force" == "0" ]]
+if [[ -f "$filename.html" && "$force" == "0" ]]
 then
-	echo "File \"$output.pdf\" would be overwritten.";
+	echo "File \"$filename.html\" would be overwritten then deleted.";
 	exit;
-elif [[ -f "$output.pdf" && "$force" == "1" ]]
+elif [[ -f "$filename.html" && "$force" == "1" && "$debug_html" == "1" ]]
 then
-	printer "File \"$output.pdf\" will be overwritten.";
+	printer "File \"$filename.html\" will be overwritten.";
+elif [[ -f "$filename.html" && "$force" == "1" && "$debug_html" == "0" ]]
+then
+	printer "File \"$filename.html\" will be overwritten and deleted.";
+fi
+
+if [[ -f "$filename.pdf" && "$force" == "0" ]]
+then
+	echo "File \"$filename.pdf\" would be overwritten.";
+	exit;
+elif [[ -f "$filename.pdf" && "$force" == "1" ]]
+then
+	printer "File \"$filename.pdf\" will be overwritten.";
 fi
 
 printer "Running grip.";
-html="$(grip --user="$GIT_USER" --pass="$GIT_PASS" "$input" --export -)";
+html="$(grip --user="$GIT_USER" --pass="$GIT_PASS" "$inputfile" --export -)";
 
 printer "Injecting style.";
 html+="<style>$(<$DIR/.grippeteer/style.css)</style>";
@@ -209,14 +202,14 @@ printer "Adding \"target='_blank'\" to anchor tags.";
 links="s/<a /<a target=\"_blank\" /g";
 html="$(echo "$html" | sed "$links")";
 
-printer "Exporting html to $output.html.";
-echo "$html" > "$output.html";
+printer "Exporting html to $filename.html.";
+echo "$html" > "$filename.html";
 
-printer "Running puppeteer-pdf for input $output.html and output $output.og.pdf.";
+printer "Running puppeteer-pdf for input $filename.html and output $filename.og.pdf.";
 M="0.25in";
 puppeteer-pdf \
-	"$output.html" \
-	--path "$output.og.pdf" \
+	"$filename.html" \
+	--path "$filename.og.pdf" \
 	--marginTop="$M" \
 	--marginBottom="$M" \
 	--marginLeft="$M" \
@@ -226,20 +219,20 @@ puppeteer-pdf \
 
 if [[ "$debug_html" == "0" ]]
 then
-	printer "Deleting $output.html.";
+	printer "Deleting $filename.html.";
 fi
 if [[ "$debug_html" == "0" ]]
 then
-	rm "$output.html";
+	rm "$filename.html";
 fi
 
 printer "Compressing pdf.";
 # compress pdf
-pdf_compress "$output.og.pdf" "$output.pdf"
+pdf_compress "$filename.og.pdf" "$filename.pdf"
 
-printer "Removing uncompressed pdf $output.og.pdf.";
+printer "Removing uncompressed pdf $filename.og.pdf.";
 # delete og
-rm "$output.og.pdf";
+rm "$filename.og.pdf";
 
 printer "Success.";
 savelogfile;

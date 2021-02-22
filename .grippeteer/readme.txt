@@ -2,14 +2,13 @@ grippeteer (Frankie Baffa <frankiebaffa@gmail.com>)
 A program to convert Github-flavored Mardown (GFM) documents into formatted PDFs.
 =======
 USAGE:
-grippeteer -i [INPUTFILE] -o [OUTPUTFILENAME] [OPTIONS]
+grippeteer -F [INPUTFILE] [OPTIONS]
 
 DESCRIPTION:
 Utilizing grip to convert Markdown to a Github-readme styled html document, then puppeteer-pdf to convert html into a PDF through headless-chrome.  grippeteer also allows for custom tags to add more formatting options which is not innate to Markdown or GFM.
 
 OPTIONS:
--i | --input [INPUTFILE]        Specifies which markdown file will be converted.
--o | --output [OUTPUTFILENAME]  Specifies the name of the output file (no file extension).
+-F | --filename [FILENAME]      Specifies which markdown file will be converted.
 -f | --force                    Allows for the deletion of existing files.
 -h | --help                     Displays this message.
 -d | --debug-html               Keeps .html file generated in the conversion process for debugging purposes.

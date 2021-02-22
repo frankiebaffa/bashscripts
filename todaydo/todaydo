@@ -322,7 +322,7 @@ f		fi
 # iterate through args and set switches
 for arg in "$@" # {{{
 do
-	split_args=$(arg_breaker "$arg");
+	split_args=$(argbreaker "$arg");
 	if [[ "${split_args:0:1}" == "-" ]]
 	then
 		for split_arg in $split_args

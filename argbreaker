@@ -1,13 +1,18 @@
 #!/bin/bash
-# argbreaker
-# break combined arguments
-# -vfI == -v -f -I
+<<COMMENT
+	PROGRAM:     argbreaker
+	DESCRIPTION: breaks combined arguments into individual
+	INPUT:       -vdt
+	OUTPUT:      -v -d -t
+	INPUT:       --debug
+	OUTPUT:      --debug
+COMMENT
 
 arg="$1";
 # if char[0] == -, char[1] != -, char[2] exists
 if [[ "${arg:0:1}" == "-" ]] \
-	&& [[ "${arg:1:2}" != "-" ]] \
-	&& [[ ! -z "${arg:2:3}" ]]
+	&& [[ "${arg:1:1}" != "-" ]] \
+	&& [[ ! -z "${arg:2:1}" ]]
 then
 	new_arg="";
 	no_dash="${arg:1:${#arg}}";

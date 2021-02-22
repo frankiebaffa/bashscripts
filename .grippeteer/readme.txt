@@ -1,16 +1,11 @@
-md_to_pdf
-
-AUTHOR:
-Frankie Baffa <frankiebaffa@gmail.com>
-
-OVERVIEW:
+grippeteer (Frankie Baffa <frankiebaffa@gmail.com>)
 A program to convert Github-flavored Mardown (GFM) documents into formatted PDFs.
-
+=======
 USAGE:
-md_to_pdf -i [INPUTFILE] -o [OUTPUTFILENAME] [OPTIONS]
+grippeteer -i [INPUTFILE] -o [OUTPUTFILENAME] [OPTIONS]
 
 DESCRIPTION:
-Utilizing grip to convert Markdown to a Github-readme styled html document, then puppeteer-pdf to convert html into a PDF through headless-chrome.  md_to_pdf also allows for custom tags to add more formatting options which is not innate to Markdown or GFM.
+Utilizing grip to convert Markdown to a Github-readme styled html document, then puppeteer-pdf to convert html into a PDF through headless-chrome.  grippeteer also allows for custom tags to add more formatting options which is not innate to Markdown or GFM.
 
 OPTIONS:
 -i | --input [INPUTFILE]        Specifies which markdown file will be converted.
@@ -18,6 +13,9 @@ OPTIONS:
 -f | --force                    Allows for the deletion of existing files.
 -h | --help                     Displays this message.
 -d | --debug-html               Keeps .html file generated in the conversion process for debugging purposes.
+-v | --verbose                  Prints messages during runtime.
+-g | --log                      Prints verbose messages with timestamps.
+-L | --logfile [LOGFILE]        Prints log messages to specified file.
 
 CUSTOM TAG-LIKES:
 These can be included in the markdown document and will be replaced with html tags after the html conversion step.

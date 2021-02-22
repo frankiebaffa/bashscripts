@@ -5,7 +5,7 @@
 	DESCRIPTION: converts a github-flavored-markdown file to a github-styled
 	             html page followed by a formatted PDF.
 COMMENT
-
+startunixtime="$(date +"%s")";
 verbose="0";
 log="0";
 logfile="";
@@ -27,7 +27,7 @@ function logtofile() { # $msg
 }
 function logprint() { # $msg
 	msg="$1";
-	d="$(date +"%Y-%m-%d %H:%M:%N")";
+	d="$(date +"%Y-%m-%d %H:%M:%S.%N")";
 	if [[ "$verbose" == "1" && "$log" == "1" && -z "$logfile" && ! -z "$msg" ]]
 	then
 		echo "$d $msg";
@@ -235,5 +235,7 @@ printer "Removing uncompressed pdf $filename.og.pdf.";
 rm "$filename.og.pdf";
 
 printer "Success.";
+endunixtime="$(date +"%s")";
+printer "Finished in $(($endunixtime-$startunixtime)) seconds.";
 savelogfile;
 

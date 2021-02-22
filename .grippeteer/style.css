@@ -12,7 +12,8 @@ h3 {font-size: 18px;}
 h4 {font-size: 14px;}
 h5 {font-size: 12px;}
 h6 {font-size: 10px;}
-p {font-size: 12px;}
+p, ul, li, th, td, .highlight {font-size: 12px !important;}
+pre, code {font-size: 1em !important;}
 small {font-size: 10px;}
 h3:nth-child(1) {
 	display: none !important;
@@ -20,7 +21,7 @@ h3:nth-child(1) {
 hr {
 	padding: 0 !important;
 	margin: 0 !important;
-	height: 2px !important;
+	height: 1px !important;
 	margin-bottom: 16px !important;
 }
 .markdown-body.entry-content {

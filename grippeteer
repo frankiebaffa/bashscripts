@@ -1,26 +1,76 @@
 #!/bin/bash
-# md_to_pdf
-# converts a github-flavored-markdown file to an github-styled html page
+<<COMMENT
+	PROGRAM:     grippeteer
+	AUTHOR:      Frankie Baffa <frankiebaffa@gmail.com>
+	DESCRIPTION: converts a github-flavored-markdown file to a github-styled
+	             html page followed by a formatted PDF.
+COMMENT
+
+verbose="0";
+log="0";
+logfile="";
+logstr="";
+function savelogfile() {
+	if [[ $verbose == "1" && $log == "1" && ! -z "$logfile" && ! -z "$logstr" ]]
+	then
+		printer "Saving log file \"$logfile\".";
+		echo -ne "$logstr" > "$logfile";
+	fi
+}
+function logtofile() { # $msg
+	d="$1";
+	msg="$2";
+	if [[ $verbose == "1" && "$log" == "1" && ! -z "$logfile" && ! -z "$msg" ]]
+	then
+		logstr+="$d $msg\n";
+	fi
+}
+function logprint() { # $msg
+	msg="$1";
+	d="$(date +"%Y-%m-%d %H:%M:%N")";
+	if [[ "$verbose" == "1" && "$log" == "1" && -z "$logfile" && ! -z "$msg" ]]
+	then
+		echo "$d $msg";
+	elif [[ "$verbose" == "1" && "$log" == "1" && ! -z "$logfile" && ! -z "$msg" ]]
+	then
+		logtofile "$d" "$msg";
+	fi
+}
+function verboseprint() { # $msg
+	msg="$1";
+	if [[ "$log" == "0" && ! -z "$msg" ]]
+	then
+		echo "$msg";
+	elif [[ "$log" == "1" && ! -z "$msg" ]]
+	then
+		logprint "$msg";
+	fi
+}
+function printer() { # $msg
+	msg="$1";
+	if [[ "$verbose" == "1" && ! -z "$msg" ]]
+	then
+		verboseprint "$msg";
+	fi
+}
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )";
-HELP="$(<$DIR/.md_to_pdf/readme.txt)";
+STATIC="$DIR/.grippeteer";
+HELP="$(<$STATIC/readme.txt)";
 
 grip_check="$(command -v grip)";
+GRIP="$(<$STATIC/grip.txt)";
 if [[ -z "$grip_check" ]]
 then
-	echo "Program \"grip\" is required.";
-	echo "linux: 'pip install grip'";
-	echo "MacOS: 'brew install grip'";
-	echo "source: https://github.com/joeyespo/grip";
+	echo "$GRIP";
 	exit;
 fi
 
 puppeteer_check="$(command -v puppeteer-pdf)";
+PUPPETEER="$(<$STATIC/puppeteer.txt)";
 if [[ -z "$puppeteer_check" ]]
 then
-	echo "Program \"puppeteer-pdf\" is required.";
-	echo "npm: 'npm -i puppeteer-pdf -g'";
-	echo "source: https://github.com/coletiv/puppeteer-pdf'";
+	echo "$PUPPETEER";
 	exit;
 fi
 
@@ -30,42 +80,58 @@ output="";
 getoutput="0";
 force="0";
 debug_html="0";
-
-for arg in "$@"
+getlogfile="0";
+for init_arg in "$@"
 do
-	if [[ "$getinput" == "0" && "$getoutput" == "0" ]]
-	then
-		if [[ "$arg" == "-h" || "$arg" == "--help" ]]
+	args="$(argbreaker "$init_arg")";
+	for arg in ${args[@]}
+	do
+		if [[ "$getinput" == "0" && "$getoutput" == "0" && "$getlogfile" == "0" ]]
 		then
-			echo "$HELP";
-			exit 0;
-		elif [[ "$arg" == "-i" || "$arg" == "--input" ]]
+			if [[ "$arg" == "-h" || "$arg" == "--help" ]]
+			then
+				echo "$HELP";
+				exit 0;
+			elif [[ "$arg" == "-i" || "$arg" == "--input" ]]
+			then
+				getinput="1";
+			elif [[ "$arg" == "-o" || "$arg" == "--output" ]]
+			then
+				getoutput="1";
+			elif [[ "$arg" == "-f" || "$arg" == "--force" ]]
+			then
+				force="1";
+			elif [[ "$arg" == "-d" || "$arg" == "--debug-html" ]]
+			then
+				debug_html="1";
+			elif [[ "$arg" == "-v" || "$arg" == "--verbose" ]]
+			then
+				verbose="1";
+			elif [[ "$arg" == "-g" || "$arg" == "--log" ]]
+			then
+				log="1";
+			elif [[ "$arg" == "-L" || "$arg" == "--logfile" ]]
+			then
+				getlogfile="1";
+			else
+				echo "Unrecognized argument $arg";
+				exit;
+			fi
+		elif [[ "$getinput" == "1" ]]
 		then
-			getinput="1";
-		elif [[ "$arg" == "-o" || "$arg" == "--output" ]]
+			input="$arg";
+			getinput="0";
+		elif [[ "$getoutput" == "1" ]]
 		then
-			getoutput="1";
-		elif [[ "$arg" == "-f" || "$arg" == "--force" ]]
+			output="$arg";
+			getoutput="0";
+		elif [[ "$getlogfile" == "1" ]]
 		then
-			force="1";
-		elif [[ "$arg" == "-d" || "$arg" == "--debug-html" ]]
-		then
-			debug_html="1";
-		else
-			echo "Unrecognized argument $arg";
-			exit;
+			logfile="$arg";
+			getlogfile="0";
 		fi
-	elif [[ "$getinput" == "1" ]]
-	then
-		input="$arg";
-		getinput="0";
-	elif [[ "$getoutput" == "1" ]]
-	then
-		output="$arg";
-		getoutput="0";
-	fi
+	done
 done
-
 if [[ -z "$input" ]]
 then
 	echo "Missing value for input";
@@ -88,29 +154,48 @@ if [[ -f "$output.html" && "$force" == "0" ]]
 then
 	echo "File \"$output.html\" would be overwritten then deleted.";
 	exit;
+elif [[ -f "$output.html" && "$force" == "1" && "$debug_html" == "1" ]]
+then
+	printer "File \"$output.html\" will be overwritten.";
+elif [[ -f "$output.html" && "$force" == "1" && "$debug_html" == "0" ]]
+then
+	printer "File \"$output.html\" will be overwritten and deleted.";
 fi
 
 if [[ -f "$output.pdf" && "$force" == "0" ]]
 then
 	echo "File \"$output.pdf\" would be overwritten.";
 	exit;
+elif [[ -f "$output.pdf" && "$force" == "1" ]]
+then
+	printer "File \"$output.pdf\" will be overwritten.";
 fi
 
+printer "Running grip.";
 html="$(grip --user="$GIT_USER" --pass="$GIT_PASS" "$input" --export -)";
-html+="<style>$(<$DIR/.md_to_pdf/style.css)</style>";
 
+printer "Injecting style.";
+html+="<style>$(<$DIR/.grippeteer/style.css)</style>";
+
+printer "Injecting font awesome.";
 # insert font awesome after head
 fonta="s/<\/head>/<script src=\"https:\/\/kit.fontawesome.com\/66d3b9dbe0.js\" crossorigin=\"anonymous\"><\/script><\/head>/g";
 html="$(echo "$html" | sed "$fonta")";
+
+printer "Replacing \\pagebreak with actual breaking div.";
 # handle page break
 # break represented by "\pagebreak" on a line by iteself
 html="$(echo "$html" | sed "s/\\\\pagebreak<\/p>/<\/p><div style=\"page-break-after:always!important;\"><\/div>/g")";
+
+printer "Replacing //small// inline with small tag.";
 # handle custom small tag
 # tag represented by "//small//" inline to open and "//-small//" inline to close
 small_open="s/\/\/small\/\//<small>/g";
 small_close="s/\/\/-small\/\//<\/small>/g";
 html="$(echo "$html" | sed "$small_open")";
 html="$(echo "$html" | sed "$small_close")";
+
+printer "Replacing //fas...// inline with font awesome tags.";
 # handle font-awesome tags
 fas=($(echo "$html" | grep -o '//fas [a-zA-Z0-9\-]\+//'))
 for ((i = 0; i < "${#fas[@]}"; i+=2))
@@ -123,8 +208,14 @@ do
 	html="$(echo "$html" | sed "$replace")";
 done;
 
+printer "Adding \"target='_blank'\" to anchor tags.";
+links="s/<a /<a target=\"_blank\" /g";
+html="$(echo "$html" | sed "$links")";
+
+printer "Exporting html to $output.html.";
 echo "$html" > "$output.html";
 
+printer "Running puppeteer-pdf for input $output.html and output $output.og.pdf.";
 M="0.25in";
 puppeteer-pdf \
 	"$output.html" \
@@ -138,12 +229,21 @@ puppeteer-pdf \
 
 if [[ "$debug_html" == "0" ]]
 then
+	printer "Deleting $output.html.";
+fi
+if [[ "$debug_html" == "0" ]]
+then
 	rm "$output.html";
 fi
 
+printer "Compressing pdf.";
 # compress pdf
 pdf_compress "$output.og.pdf" "$output.pdf"
 
+printer "Removing uncompressed pdf $output.og.pdf.";
 # delete og
 rm "$output.og.pdf";
+
+printer "Success.";
+savelogfile;
 

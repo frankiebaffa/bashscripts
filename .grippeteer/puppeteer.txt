@@ -1,0 +1,4 @@
+grippeteer
+Warning : puppeteer-pdf is required.
+NPM     : npm -i puppeteer-pdf -g
+Source  : https://github.com/coletiv/puppeteer-pdf

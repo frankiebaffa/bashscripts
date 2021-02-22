@@ -81,56 +81,53 @@ getoutput="0";
 force="0";
 debug_html="0";
 getlogfile="0";
-for init_arg in "$@"
+args="$(argbreaker "$@")";
+for arg in ${args[@]}
 do
-	args="$(argbreaker "$init_arg")";
-	for arg in ${args[@]}
-	do
-		if [[ "$getinput" == "0" && "$getoutput" == "0" && "$getlogfile" == "0" ]]
+	if [[ "$getinput" == "0" && "$getoutput" == "0" && "$getlogfile" == "0" ]]
+	then
+		if [[ "$arg" == "-h" || "$arg" == "--help" ]]
 		then
-			if [[ "$arg" == "-h" || "$arg" == "--help" ]]
-			then
-				echo "$HELP";
-				exit 0;
-			elif [[ "$arg" == "-i" || "$arg" == "--input" ]]
-			then
-				getinput="1";
-			elif [[ "$arg" == "-o" || "$arg" == "--output" ]]
-			then
-				getoutput="1";
-			elif [[ "$arg" == "-f" || "$arg" == "--force" ]]
-			then
-				force="1";
-			elif [[ "$arg" == "-d" || "$arg" == "--debug-html" ]]
-			then
-				debug_html="1";
-			elif [[ "$arg" == "-v" || "$arg" == "--verbose" ]]
-			then
-				verbose="1";
-			elif [[ "$arg" == "-g" || "$arg" == "--log" ]]
-			then
-				log="1";
-			elif [[ "$arg" == "-L" || "$arg" == "--logfile" ]]
-			then
-				getlogfile="1";
-			else
-				echo "Unrecognized argument $arg";
-				exit;
-			fi
-		elif [[ "$getinput" == "1" ]]
+			echo "$HELP";
+			exit 0;
+		elif [[ "$arg" == "-i" || "$arg" == "--input" ]]
 		then
-			input="$arg";
-			getinput="0";
-		elif [[ "$getoutput" == "1" ]]
+			getinput="1";
+		elif [[ "$arg" == "-o" || "$arg" == "--output" ]]
 		then
-			output="$arg";
-			getoutput="0";
-		elif [[ "$getlogfile" == "1" ]]
+			getoutput="1";
+		elif [[ "$arg" == "-f" || "$arg" == "--force" ]]
 		then
-			logfile="$arg";
-			getlogfile="0";
+			force="1";
+		elif [[ "$arg" == "-d" || "$arg" == "--debug-html" ]]
+		then
+			debug_html="1";
+		elif [[ "$arg" == "-v" || "$arg" == "--verbose" ]]
+		then
+			verbose="1";
+		elif [[ "$arg" == "-g" || "$arg" == "--log" ]]
+		then
+			log="1";
+		elif [[ "$arg" == "-L" || "$arg" == "--logfile" ]]
+		then
+			getlogfile="1";
+		else
+			echo "Unrecognized argument $arg";
+			exit;
 		fi
-	done
+	elif [[ "$getinput" == "1" ]]
+	then
+		input="$arg";
+		getinput="0";
+	elif [[ "$getoutput" == "1" ]]
+	then
+		output="$arg";
+		getoutput="0";
+	elif [[ "$getlogfile" == "1" ]]
+	then
+		logfile="$arg";
+		getlogfile="0";
+	fi
 done
 if [[ -z "$input" ]]
 then

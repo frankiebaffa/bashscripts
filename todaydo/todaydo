@@ -320,18 +320,10 @@ f		fi
 } # }}}
 
 # iterate through args and set switches
-for arg in "$@" # {{{
+args="$(argbreaker "$@")";
+for arg in ${args[@]}
 do
-	split_args=$(argbreaker "$arg");
-	if [[ "${split_args:0:1}" == "-" ]]
-	then
-		for split_arg in $split_args
-		do
-			check_arg "$split_arg";
-		done
-	else
-		check_arg "$split_args";
-	fi
+	check_arg "$split_args";
 done # }}}
 
 # if $show_help, then show help

@@ -8,26 +8,30 @@
 	OUTPUT:      --debug
 COMMENT
 
-arg="$1";
-# if char[0] == -, char[1] != -, char[2] exists
-if [[ "${arg:0:1}" == "-" ]] \
-	&& [[ "${arg:1:1}" != "-" ]] \
-	&& [[ ! -z "${arg:2:1}" ]]
-then
-	new_arg="";
-	no_dash="${arg:1:${#arg}}";
-	i=0;
-	dlim=""
-	while [[ ! -z "${no_dash:i:1}" ]]
-	do
-		single="${no_dash:i:1}";
-		new_arg+=$dlim;
-		new_arg+="-$single";
-		dlim=" ";
-		i=$((i + 1));
-	done
-	echo -ne "$new_arg";
-else
-	echo -ne "$arg";
-fi
+output="";
+for arg in "$@"
+do
+	# if char[0] == -, char[1] != -, char[2] exists
+	if [[ "${arg:0:1}" == "-" ]] \
+		&& [[ "${arg:1:1}" != "-" ]] \
+		&& [[ ! -z "${arg:2:1}" ]]
+	then
+		new_arg="";
+		no_dash="${arg:1:${#arg}}";
+		i=0;
+		dlim=""
+		while [[ ! -z "${no_dash:i:1}" ]]
+		do
+			single="${no_dash:i:1}";
+			new_arg+=$dlim;
+			new_arg+="-$single";
+			dlim=" ";
+			i=$((i + 1));
+		done
+		output+="$new_arg ";
+	else
+		output+="$arg ";
+	fi
+done
+echo -ne "$output";
 

@@ -29,10 +29,14 @@ hr {
 	border: none !important;
 }
 .fas {
+	width: 1em !important;
+	height: 1em !important;
 	font-family: FontAwesome !important;
 }
 table.tablesplit {
 	table-layout: fixed !important;
+	display: table !important;
+	margin-bottom: 0px !important;
 }
 table.tablesplit,
 table.tablesplit>tbody,
@@ -45,7 +49,6 @@ table.tablesplit>tbody>tr>td.tablecell {
 	border: none !important;
 }
 table.tablesplit>tbody>tr>td.tablecell {
-	width: 50% !important;
 	vertical-align: top !important;
 }
 table.tablesplit>tbody>tr>td.tablecell:nth-child(1) {
@@ -55,6 +58,45 @@ table.tablesplit>tbody>tr>td.tablecell:nth-child(1) {
 	padding-bottom: 0px !important;
 }
 table.tablesplit>tbody>tr>td.tablecell:nth-child(2) {
+	padding-right: 0px !important;
+	padding-left: 12px !important;
+	padding-top: 0px !important;
+	padding-bottom: 0px !important;
+}
+table.triplesplit {
+	table-layout: fixed !important;
+	display: table !important;
+	margin-bottom: 0px !important;
+}
+table.triplesplit,
+table.triplesplit>tbody,
+table.triplesplit>tbody>tr {
+	width: 100% !important;
+}
+table.triplesplit>tbody,
+table.triplesplit>tbody>tr,
+table.triplesplit>tbody>tr>td.tablecell {
+	border: none !important;
+}
+table.triplesplit>tbody>tr>td.tablecell {
+	vertical-align: top !important;
+}
+table.triplesplit>tbody>tr>td.tablecell:nth-child(1) {
+	text-align: left !important;
+	padding-right: 12px !important;
+	padding-left: 0px !important;
+	padding-top: 0px !important;
+	padding-bottom: 0px !important;
+}
+table.triplesplit>tbody>tr>td.tablecell:nth-child(2) {
+	text-align: center !important;
+	padding-right: 12px !important;
+	padding-left: 12px !important;
+	padding-top: 0px !important;
+	padding-bottom: 0px !important;
+}
+table.triplesplit>tbody>tr>td.tablecell:nth-child(3) {
+	text-align: right !important;
 	padding-right: 0px !important;
 	padding-left: 12px !important;
 	padding-top: 0px !important;

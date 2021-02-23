@@ -163,8 +163,8 @@ fi
 
 printer "Running grip.";
 html="$(grip --user="$GIT_USER" --pass="$GIT_PASS" "$inputfile" --export -)";
-html="${html//[$'\t\r\n']}";
-
+html="${html//[$'\t\r\n']/" "}";
+echo "$html";
 printer "Injecting style.";
 html+="<style>$(<$DIR/.grippeteer/style.css)</style>";
 
@@ -176,20 +176,32 @@ html="$(echo "$html" | sed "$fonta")";
 printer "Replacing \"# [[pagebreak]]\" with actual breaking div.";
 # handle page break
 # break represented by "# [[pagebreak]]" on a line by iteself
-matchbreak="s/<h1><a id=\"user-content-pagebreak[0-9\-]*\" class=\"anchor\" href=\"#pagebreak[0-9\-]*\" aria-hidden=\"true\"><span aria-hidden=\"true\" class=\"octicon octicon-link\"><\/span><\/a>\[\[pagebreak\]\]<\/h1>/<div style=\"page-break-after:always!important;\"><\/div>/g";
+matchbreak="s/<h1> <a id=\"user-content-pagebreak[0-9\-]*\" class=\"anchor\" href=\"#pagebreak[0-9\-]*\" aria-hidden=\"true\"><span aria-hidden=\"true\" class=\"octicon octicon-link\"><\/span><\/a>\[\[pagebreak\]\]<\/h1>/<div style=\"page-break-after:always!important;\"><\/div>/g";
 html="$(echo "$html" | sed "$matchbreak")";
 
-printer "Replacing \"# [[tablestart]]\" with table beginning.";
-matchtstart="s/<h1><a id=\"user-content-tablestart[0-9\-]*\" class=\"anchor\" href=\"#tablestart[0-9\-]*\" aria-hidden=\"true\"><span aria-hidden=\"true\" class=\"octicon octicon-link\"><\/span><\/a>\[\[tablestart\]\]<\/h1>/<table class=\"tablesplit\"><tbody><tr><td class=\"tablecell\">/g";
+printer "Replacing \"# [[doublestart]]\" with table beginning.";
+matchtstart="s/<h1> <a id=\"user-content-doublestart[0-9\-]*\" class=\"anchor\" href=\"#doublestart[0-9\-]*\" aria-hidden=\"true\"><span aria-hidden=\"true\" class=\"octicon octicon-link\"><\/span><\/a>\[\[doublestart\]\]<\/h1>/<table class=\"tablesplit\"><tbody><tr><td class=\"tablecell\">/g";
 html="$(echo "$html" | sed "$matchtstart")";
 
-printer "Replacing \"# [[tablesplit]]\" with column split.";
-matchtsplit="s/<h1><a id=\"user-content-tablesplit[0-9\-]*\" class=\"anchor\" href=\"#tablesplit[0-9\-]*\" aria-hidden=\"true\"><span aria-hidden=\"true\" class=\"octicon octicon-link\"><\/span><\/a>\[\[tablesplit\]\]<\/h1>/<\/td><td class=\"tablecell\">/g";
+printer "Replacing \"# [[doublesplit]]\" with column split.";
+matchtsplit="s/<h1> <a id=\"user-content-doublesplit[0-9\-]*\" class=\"anchor\" href=\"#doublesplit[0-9\-]*\" aria-hidden=\"true\"><span aria-hidden=\"true\" class=\"octicon octicon-link\"><\/span><\/a>\[\[doublesplit\]\]<\/h1>/<\/td><td class=\"tablecell\">/g";
 html="$(echo "$html" | sed "$matchtsplit")";
 
-printer "Replacing \"# [[tableend]]\" with table beginning.";
-matchtend="s/<h1><a id=\"user-content-tableend[0-9\-]*\" class=\"anchor\" href=\"#tableend[0-9\-]*\" aria-hidden=\"true\"><span aria-hidden=\"true\" class=\"octicon octicon-link\"><\/span><\/a>\[\[tableend\]\]<\/h1>/<\/td><\/tr><\/tbody><\/table>/g";
+printer "Replacing \"# [[doubleend]]\" with table beginning.";
+matchtend="s/<h1> <a id=\"user-content-doubleend[0-9\-]*\" class=\"anchor\" href=\"#doubleend[0-9\-]*\" aria-hidden=\"true\"><span aria-hidden=\"true\" class=\"octicon octicon-link\"><\/span><\/a>\[\[doubleend\]\]<\/h1>/<\/td><\/tr><\/tbody><\/table>/g";
 html="$(echo "$html" | sed "$matchtend")";
+
+printer "Replacing \"# [[triplestart]]\" with table beginning.";
+triplestart="s/<h1> <a id=\"user-content-triplestart[0-9\-]*\" class=\"anchor\" href=\"#triplestart[0-9\-]*\" aria-hidden=\"true\"><span aria-hidden=\"true\" class=\"octicon octicon-link\"><\/span><\/a>\[\[triplestart\]\]<\/h1>/<table class=\"triplesplit\"><tbody><tr><td class=\"tablecell\">/g";
+html="$(echo "$html" | sed "$triplestart")";
+
+printer "Replacing \"# [[triplesplit]]\" with column split.";
+triplesplit="s/<h1> <a id=\"user-content-triplesplit[0-9\-]*\" class=\"anchor\" href=\"#triplesplit[0-9\-]*\" aria-hidden=\"true\"><span aria-hidden=\"true\" class=\"octicon octicon-link\"><\/span><\/a>\[\[triplesplit\]\]<\/h1>/<\/td><td class=\"tablecell\">/g";
+html="$(echo "$html" | sed "$triplesplit")";
+
+printer "Replacing \"# [[tripleend]]\" with triple beginning.";
+tripleend="s/<h1> <a id=\"user-content-tripleend[0-9\-]*\" class=\"anchor\" href=\"#tripleend[0-9\-]*\" aria-hidden=\"true\"><span aria-hidden=\"true\" class=\"octicon octicon-link\"><\/span><\/a>\[\[tripleend\]\]<\/h1>/<\/td><\/tr><\/tbody><\/table>/g";
+html="$(echo "$html" | sed "$tripleend")";
 
 printer "Replacing //small// inline with small tag.";
 # handle custom small tag

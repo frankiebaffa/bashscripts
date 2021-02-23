@@ -31,3 +31,33 @@ hr {
 .fas {
 	font-family: FontAwesome !important;
 }
+table.tablesplit {
+	table-layout: fixed !important;
+}
+table.tablesplit,
+table.tablesplit>tbody,
+table.tablesplit>tbody>tr {
+	width: 100% !important;
+}
+table.tablesplit>tbody,
+table.tablesplit>tbody>tr,
+table.tablesplit>tbody>tr>td.tablecell {
+	border: none !important;
+}
+table.tablesplit>tbody>tr>td.tablecell {
+	width: 50% !important;
+	vertical-align: top !important;
+}
+table.tablesplit>tbody>tr>td.tablecell:nth-child(1) {
+	padding-right: 12px !important;
+	padding-left: 0px !important;
+	padding-top: 0px !important;
+	padding-bottom: 0px !important;
+}
+table.tablesplit>tbody>tr>td.tablecell:nth-child(2) {
+	padding-right: 0px !important;
+	padding-left: 12px !important;
+	padding-top: 0px !important;
+	padding-bottom: 0px !important;
+}
+

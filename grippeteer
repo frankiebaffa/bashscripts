@@ -164,7 +164,7 @@ fi
 printer "Running grip.";
 html="$(grip --user="$GIT_USER" --pass="$GIT_PASS" "$inputfile" --export -)";
 html="${html//[$'\t\r\n']/" "}";
-echo "$html";
+
 printer "Injecting style.";
 html+="<style>$(<$DIR/.grippeteer/style.css)</style>";
 

@@ -6,6 +6,10 @@
 	             html page followed by a formatted PDF.
 	LAST EDIT:   2021-03-08
 COMMENT
+# Setting IFS to "" to preserve line breaks and tabs during the stripping loop
+# broke font awesome integration. Storing the default value here allows the
+# reset of IFS before font-awesome replacement.
+DEF_IFS=$IFS;
 startunixtime="$(date +"%s")";
 verbose="0";
 log="0";
@@ -112,7 +116,7 @@ do
 		then
 			debug_grip_html="1";
 		else
-			echo "Unrecognized argument $arg";
+			printer "Unrecognized argument $arg";
 			exit;
 		fi
 	elif [[ "$getfilename" == "1" ]]
@@ -127,13 +131,13 @@ do
 done
 if [[ -z "$filename" ]]
 then
-	echo "Missing value for filename";
+	printer "Missing value for filename";
 	exit;
 fi
 
 if [[ ! -f "$filename.md" && ! -f "$filename.markdown" ]]
 then
-	echo "Input file does not exist."
+	printer "Input file does not exist."
 	exit;
 fi
 inputfile="";
@@ -147,7 +151,7 @@ fi
 
 if [[ -f "$filename.html" && "$force" == "0" ]]
 then
-	echo "File \"$filename.html\" would be overwritten then deleted.";
+	printer "File \"$filename.html\" would be overwritten then deleted.";
 	exit;
 elif [[ -f "$filename.html" && "$force" == "1" && "$debug_html" == "1" ]]
 then
@@ -159,7 +163,7 @@ fi
 
 if [[ -f "$filename.pdf" && "$force" == "0" ]]
 then
-	echo "File \"$filename.pdf\" would be overwritten.";
+	printer "File \"$filename.pdf\" would be overwritten.";
 	exit;
 elif [[ -f "$filename.pdf" && "$force" == "1" ]]
 then
@@ -167,26 +171,43 @@ then
 fi
 
 printer "Running grip.";
-html="$(grip --user="$GIT_USER" --pass="$GIT_PASS" "$inputfile" --export -)";
+grip_html="$(grip --user="$GIT_USER" --pass="$GIT_PASS" "$inputfile" --export -)";
 # check if grip debug file exists, force is off, and debug_grip_html is on
 if [[ -f "$filename.grip.html" && "$force" == "0" && "$debug_grip_html" == "1" ]]
 then
-	echo "File \"$filename.grip.html\" would be overwritten.";
+	printer "File \"$filename.grip.html\" would be overwritten.";
 	exit;
 # check if grip debug file exists, force is on, and debug_grip_html is on
 elif [[ -f "$filename.grip.html" && "$force" == "1" && "$debug_grip_html" == "1" ]]
 then
-	echo "File \"$filename.grip.html\" will be overwritten.";
+	printer "File \"$filename.grip.html\" will be overwritten.";
 fi
 # check if force is on and debug_grip_html is on
 if [[ "$force" == "1" && "$debug_grip_html" == "1" ]]
 then
 	printer "Exporting raw grip html to \"$filename.grip.html\"";
-	echo "$html" > "$filename.grip.html";
+	echo "$grip_html" > "$filename.grip.html";
 fi
 
-html="${html//[$'\t\r\n']/" "}";
-
+printer "Removing line breaks while preserving code tags";
+html="";
+opened_pre_tags=0;
+closed_pre_tags=0;
+IFS=''
+while read data
+do
+	line=$data;
+	opened_this_line=$(echo "$line" | grep -c "<pre>");
+	opened_pre_tags=$(($opened_pre_tags+$opened_this_line));
+	closed_this_line=$(echo "$line" | grep -c "</pre>");
+	closed_pre_tags=$(($closed_pre_tags+$closed_this_line));
+	if [[ $opened_pre_tags > $closed_pre_tags ]]
+	then
+		html+="$line"$'\n';
+	else
+		html+="$line"$' ';
+	fi
+done <<< "$grip_html"
 printer "Injecting style.";
 html+="<style>$(<$DIR/.grippeteer/style.css)</style>";
 
@@ -235,7 +256,10 @@ html="$(echo "$html" | sed "$small_close")";
 
 printer "Replacing //fas...// inline with font awesome tags.";
 # handle font-awesome tags
+# set IFS back to default value
+IFS=$DEF_IFS;
 fas=($(echo "$html" | grep -o '//fas [a-zA-Z0-9\-]\+//'))
+echo "FAS: \"$fas\"";
 for ((i = 0; i < "${#fas[@]}"; i+=2))
 do
 	fa="${fas[$i]} ${fas[(($i+1))]}"
@@ -243,6 +267,7 @@ do
 	fa="$(echo ${fa:2:(($len-4))})"
 	fa_end="";
 	replace="s/\/\/$fa\/\//<span class=\"$fa\"><\/span>/g";
+	echo "REPLACE: \"$replace\"";
 	html="$(echo "$html" | sed "$replace")";
 done;
 

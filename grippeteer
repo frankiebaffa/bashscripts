@@ -259,7 +259,6 @@ printer "Replacing //fas...// inline with font awesome tags.";
 # set IFS back to default value
 IFS=$DEF_IFS;
 fas=($(echo "$html" | grep -o '//fas [a-zA-Z0-9\-]\+//'))
-echo "FAS: \"$fas\"";
 for ((i = 0; i < "${#fas[@]}"; i+=2))
 do
 	fa="${fas[$i]} ${fas[(($i+1))]}"
@@ -267,7 +266,6 @@ do
 	fa="$(echo ${fa:2:(($len-4))})"
 	fa_end="";
 	replace="s/\/\/$fa\/\//<span class=\"$fa\"><\/span>/g";
-	echo "REPLACE: \"$replace\"";
 	html="$(echo "$html" | sed "$replace")";
 done;
 

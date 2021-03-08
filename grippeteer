@@ -4,6 +4,7 @@
 	AUTHOR:      Frankie Baffa <frankiebaffa@gmail.com>
 	DESCRIPTION: converts a github-flavored-markdown file to a github-styled
 	             html page followed by a formatted PDF.
+	LAST EDIT:   2021-03-08
 COMMENT
 startunixtime="$(date +"%s")";
 verbose="0";
@@ -78,6 +79,7 @@ filename="";
 getfilename="0";
 force="0";
 debug_html="0";
+debug_grip_html="0";
 getlogfile="0";
 args="$(argbreaker "$@")";
 for arg in ${args[@]}
@@ -106,6 +108,9 @@ do
 		elif [[ "$arg" == "-L" || "$arg" == "--logfile" ]]
 		then
 			getlogfile="1";
+		elif [[ "$arg" == "-G" || "$arg" == "--debug-grip-html" ]]
+		then
+			debug_grip_html="1";
 		else
 			echo "Unrecognized argument $arg";
 			exit;
@@ -163,6 +168,19 @@ fi
 
 printer "Running grip.";
 html="$(grip --user="$GIT_USER" --pass="$GIT_PASS" "$inputfile" --export -)";
+if [[ -f "$filename.grip.html" && "$force" == "0" && "$debug_grip_html" == "1" ]]
+then
+	echo "File \"$filename.grip.html\" would be overwritten.";
+	exit;
+elif [[ -f "$filename.grip.html" && "$force" == "1" && "$debug_grip_html" == "1" ]]
+then
+	echo "File \"$filename.grip.html\" will be overwritten.";
+fi
+if [[ "$force" == "1" && "$debug_grip_html" == "1" ]]
+then
+	echo "$html" > "$filename.grip.html";
+fi
+
 html="${html//[$'\t\r\n']/" "}";
 
 printer "Injecting style.";

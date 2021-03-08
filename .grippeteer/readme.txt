@@ -12,6 +12,7 @@ OPTIONS:
 -f | --force                    Allows for the deletion of existing files.
 -h | --help                     Displays this message.
 -d | --debug-html               Keeps .html file generated in the conversion process for debugging purposes.
+-G | --debug-grip-html          Keeps .html file generated directly from grip for debugging purposes.
 -v | --verbose                  Prints messages during runtime.
 -g | --log                      Prints verbose messages with timestamps.
 -L | --logfile [LOGFILE]        Prints log messages to specified file.

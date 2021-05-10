@@ -270,8 +270,25 @@ do
 done;
 
 printer "Adding \"target='_blank'\" to anchor tags.";
-links="s/<a /<a target=\"_blank\" /g";
+#links="s/<a /<a target=\"_blank\" /g";
+html+="
+<script>
+Array.from(document.querySelectorAll('a')).forEach(elem => {
+	var href = elem.getAttribute('href');
+	if (href.substring(0, 1) !== '#') {
+		elem.setAttribute('target', '_blank');
+	}
+});
+</script>
+";
 html="$(echo "$html" | sed "$links")";
+html+="
+<script>
+Array.from(document.querySelectorAll('h1,h2,h3,h4,h5,h6')).forEach(elem => {
+	elem.id = elem.textContent.trim().toLowerCase().replaceAll(' ', '-');
+});
+</script>
+";
 
 printer "Exporting html to $filename.html.";
 echo "$html" > "$filename.html";

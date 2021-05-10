@@ -6,12 +6,12 @@ h1, h2, h3, h4, h5, h6 {
 	margin: 0 !important;
 	padding: 0 !important;
 }
-h1 {font-size: 30px;}
+h1 {font-size: 28px;}
 h2 {font-size: 22px;}
 h3 {font-size: 18px;}
-h4 {font-size: 14px;}
-h5 {font-size: 12px;}
-h6 {font-size: 10px;}
+h4 {font-size: 16px;}
+h5 {font-size: 14px;}
+h6 {font-size: 12px;}
 p, ul, li, th, td, .highlight {font-size: 12px !important;}
 pre, code {font-size: 1em !important;}
 small {font-size: 10px;}

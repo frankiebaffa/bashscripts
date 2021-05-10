@@ -1,0 +1,33 @@
+#!/bin/bash
+<<COMMENT
+	PROGRAM:     requester
+	AUTHOR:      Frankie Baffa
+	DESCRIPTION: Automates outbound requests beyond login barrier
+COMMENT
+function vprint()
+# parse args
+verbose=0;
+for arg in "$(./argbreaker $@)";
+do
+	arg=$(echo $arg | xargs); # trim string
+	if [[ "$arg" == "-v" ]] || [[ "$arg" == "--verbose" ]];
+	then
+		verbose=1;
+	fi
+done
+echo $verbose;
+# set cmd dir
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )";
+# set tmp dir
+TMP="$DIR/.requester";
+# check / create tmp dir
+if [[ ! -d $TMP ]];
+then
+	mkdir $TMP;
+	if [[ ! -d $TMP ]];
+	then
+		echo "Failed to create dir: $TMP";
+		exit;
+	fi
+fi
+

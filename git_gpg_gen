@@ -1,0 +1,44 @@
+#!/bin/bash
+
+echo "Please provide your Git commit info"
+read -p "Full name: " fullName
+read -p "Email: " email
+echo ""
+
+echo "Setting up global Git identity"
+
+git config --global user.name $fullName
+git config --global user.email $email
+
+echo "Setting up GPG key"
+
+# Generate GPG key
+keyComment="Github key for $email"
+cat >keyConfig <<EOF
+Key-Type: default
+Key-Length: 4096
+Subkey-Type: default
+Subkey-Length: 4096
+Name-Real: $fullName
+Name-Comment: $keyComment
+Name-Email: $email
+Expire-Date: 0
+%commit
+EOF
+echo "Generating GPG key... (this might take a lot of time)"
+gpg --batch --generate-key keyConfig
+rm -rf keyConfig
+
+# Get pub key id
+keyId=$(gpg --list-secret-keys $keyComment | sed -n 2p | xargs)
+
+# Set signing key on Git
+git config --global user.signingkey $keyId
+git config --global commit.gpgsign true
+
+# Copy pub key and open GitHub
+gpg --armor --export $keyId | clip.exe
+echo "GPG key copied. Please paste it to your GitHub account's GPG keys."
+explorer.exe https://github.com/settings/gpg/new
+read -p "Press any key to resume..."
+
